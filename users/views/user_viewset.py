@@ -8,6 +8,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 
 from users.models import User
 from users.serializers import UserSerializer, UserCreateSerializer
+from users.permissions import IsOwnerOrReadOnly
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -33,6 +34,8 @@ class UserViewSet(viewsets.ModelViewSet):
         """Define permissões por ação."""
         if self.action == 'create':
             return [AllowAny()]
+        if self.action in ['update', 'partial_update', 'destroy']:
+            return [IsAuthenticated(), IsOwnerOrReadOnly()]
         return [IsAuthenticated()]
     
     @action(detail=False, methods=['get'])

@@ -7,6 +7,7 @@ from rest_framework.permissions import IsAuthenticatedOrReadOnly
 
 from posts.models import Comment
 from posts.serializers import CommentSerializer
+from posts.permissions import IsAuthorOrReadOnly
 
 
 class CommentViewSet(viewsets.ModelViewSet):
@@ -21,33 +22,9 @@ class CommentViewSet(viewsets.ModelViewSet):
     """
     queryset = Comment.objects.all().select_related('user', 'post')
     serializer_class = CommentSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = [IsAuthenticatedOrReadOnly, IsAuthorOrReadOnly]
     
     def perform_create(self, serializer):
         """Define o usuário como o usuário autenticado."""
         serializer.save(user=self.request.user)
-    
-    def update(self, request, *args, **kwargs):
-        """Atualiza comentário (apenas autor pode atualizar)."""
-        comment = self.get_object()
-        
-        if comment.user != request.user:
-            return Response(
-                {'detail': 'Você não tem permissão para editar este comentário.'},
-                status=status.HTTP_403_FORBIDDEN
-            )
-        
-        return super().update(request, *args, **kwargs)
-    
-    def destroy(self, request, *args, **kwargs):
-        """Deleta comentário (apenas autor pode deletar)."""
-        comment = self.get_object()
-        
-        if comment.user != request.user:
-            return Response(
-                {'detail': 'Você não tem permissão para deletar este comentário.'},
-                status=status.HTTP_403_FORBIDDEN
-            )
-        
-        return super().destroy(request, *args, **kwargs)
     

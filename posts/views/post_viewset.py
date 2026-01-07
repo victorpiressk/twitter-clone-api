@@ -5,6 +5,7 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
+from posts.permissions import IsAuthorOrReadOnly
 
 from posts.models import Post
 from posts.serializers import PostSerializer, PostCreateSerializer
@@ -22,7 +23,7 @@ class PostViewSet(viewsets.ModelViewSet):
     """
     queryset = Post.objects.all().select_related('author')
     serializer_class = PostSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = [IsAuthenticatedOrReadOnly, IsAuthorOrReadOnly]
     
     def get_serializer_class(self):
         """Retorna serializer apropriado para cada ação."""
@@ -33,30 +34,6 @@ class PostViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         """Define o autor como o usuário autenticado."""
         serializer.save(author=self.request.user)
-    
-    def update(self, request, *args, **kwargs):
-        """Atualiza post (apenas autor pode atualizar)."""
-        post = self.get_object()
-        
-        if post.author != request.user:
-            return Response(
-                {'detail': 'Você não tem permissão para editar este post.'},
-                status=status.HTTP_403_FORBIDDEN
-            )
-        
-        return super().update(request, *args, **kwargs)
-    
-    def destroy(self, request, *args, **kwargs):
-        """Deleta post (apenas autor pode deletar)."""
-        post = self.get_object()
-        
-        if post.author != request.user:
-            return Response(
-                {'detail': 'Você não tem permissão para deletar este post.'},
-                status=status.HTTP_403_FORBIDDEN
-            )
-        
-        return super().destroy(request, *args, **kwargs)
     
     @action(detail=False, methods=['get'])
     def feed(self, request):
