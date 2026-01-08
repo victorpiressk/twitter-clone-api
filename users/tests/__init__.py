@@ -1,0 +1,3 @@
+"""
+Users tests package.
+"""
