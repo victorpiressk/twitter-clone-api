@@ -3,7 +3,7 @@ Like ViewSet.
 """
 from rest_framework import viewsets, status
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 
 from posts.models import Like
 from posts.serializers import LikeSerializer
@@ -23,6 +23,12 @@ class LikeViewSet(viewsets.ModelViewSet):
     
     # Desabilitar métodos não utilizados
     http_method_names = ['get', 'post', 'delete']
+    
+    def get_permissions(self):
+        """Define permissões por ação."""
+        if self.action == 'list':
+            return [AllowAny()]
+        return [IsAuthenticated()]
     
     def create(self, request, *args, **kwargs):
         """
@@ -45,7 +51,7 @@ class LikeViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        self.perform_create(serializer)
+        serializer.save(user=request.user)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     
     def destroy(self, request, *args, **kwargs):

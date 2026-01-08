@@ -34,6 +34,8 @@ class UserViewSet(viewsets.ModelViewSet):
         """Define permissões por ação."""
         if self.action == 'create':
             return [AllowAny()]
+        if self.action in ['list', 'retrieve', 'followers', 'following']:
+            return [AllowAny()]  # ← Tornar público
         if self.action in ['update', 'partial_update', 'destroy']:
             return [IsAuthenticated(), IsOwnerOrReadOnly()]
         return [IsAuthenticated()]
