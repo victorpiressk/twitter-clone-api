@@ -1,0 +1,51 @@
+name: Pull Request Code Review
+
+on:
+  pull_request:
+    branches:
+      - main
+      - develop
+
+jobs:
+  code-quality:
+    name: Lint and Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
+      - name: Install Poetry
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install poetry==2.2.1
+
+      - name: Install dependencies
+        run: |
+          poetry install --with dev
+
+      - name: Black (code formatting)
+        run: |
+          poetry run black . --check
+
+      - name: Isort (import ordering)
+        run: |
+          poetry run isort . --check-only
+
+      - name: Flake8 (lint)
+        run: |
+          poetry run flake8
+
+      - name: Pytest
+        env:
+          DEBUG: "True"
+          SECRET_KEY: "django-insecure-ci-key"
+          SQL_ENGINE: "django.db.backends.sqlite3"
+          SQL_DATABASE: ":memory:"
+        run: |
+          poetry run pytest
