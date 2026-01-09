@@ -1,10 +1,11 @@
 """
 Authentication serializers package.
 """
-from .register_serializer import RegisterSerializer
+
 from .login_serializer import LoginSerializer
+from .register_serializer import RegisterSerializer
 
 __all__ = [
-    'RegisterSerializer',
-    'LoginSerializer',
+    "RegisterSerializer",
+    "LoginSerializer",
 ]

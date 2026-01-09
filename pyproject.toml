@@ -32,3 +32,26 @@ dev = [
     "flake8 (>=7.3.0,<8.0.0)",
     "isort (>=7.0.0,<8.0.0)"
 ]
+
+
+[tool.black]
+line-length = 88
+target-version = ["py314"]
+exclude = '''
+/(
+    migrations
+  | \.venv
+  | env
+  | venv
+  | build
+  | dist
+)/
+'''
+
+
+[tool.isort]
+profile = "black"
+line_length = 88
+skip = ["migrations", ".venv", "env", "venv"]
+known_django = ["django"]
+sections = ["FUTURE", "STDLIB", "DJANGO", "THIRDPARTY", "FIRSTPARTY", "LOCALFOLDER"]
