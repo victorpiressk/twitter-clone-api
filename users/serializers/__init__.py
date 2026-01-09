@@ -1,11 +1,12 @@
 """
 Users serializers package.
 """
-from .user_serializer import UserSerializer, UserCreateSerializer
+
 from .follow_serializer import FollowSerializer
+from .user_serializer import UserCreateSerializer, UserSerializer
 
 __all__ = [
-    'UserSerializer',
-    'UserCreateSerializer',
-    'FollowSerializer',
+    "UserSerializer",
+    "UserCreateSerializer",
+    "FollowSerializer",
 ]

@@ -1,10 +1,11 @@
 """
 Users views package.
 """
-from .user_viewset import UserViewSet
+
 from .follow_viewset import FollowViewSet
+from .user_viewset import UserViewSet
 
 __all__ = [
-    'UserViewSet',
-    'FollowViewSet',
+    "UserViewSet",
+    "FollowViewSet",
 ]
