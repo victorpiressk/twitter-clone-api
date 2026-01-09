@@ -1,0 +1,41 @@
+version: '3.9'
+
+services:
+  backend:
+    build: .
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/app
+    ports:
+      - 8000:8000
+    env_file:
+      - .env.example
+    networks:
+      - backend
+    depends_on:
+      db:
+        condition: service_healthy
+  db:
+    image: postgres:14.0-alpine
+    ports:
+      - 5432:5432
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=twitter_clone_api_dev_db
+      - POSTGRES_USER=twitter_clone_api_dev
+      - POSTGRES_PASSWORD=twitter_clone_api_dev
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U twitter_clone_api_dev -d twitter_clone_api_dev_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - backend
+networks:
+  backend:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  app_data:
