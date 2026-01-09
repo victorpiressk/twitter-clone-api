@@ -11,7 +11,7 @@ jobs:
 
     services:
       postgres:
-        image: postgres:14
+        image: postgres:15
         env:
           POSTGRES_DB: twitter_clone_api_dev_db
           POSTGRES_USER: twitter_clone_api_dev
@@ -43,31 +43,18 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.14"
-
-      - name: Cache Poetry dependencies
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cache/pypoetry
-            ~/.virtualenvs
-          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-poetry-
+          python-version: "3.11"
 
       - name: Install Poetry
         run: |
           python -m pip install --upgrade pip
-          pip install poetry==2.1.4
+          pip install poetry==2.2.1
 
       - name: Configure Poetry
         run: poetry config virtualenvs.create false
 
       - name: Install dependencies
         run: poetry install --no-interaction --no-root
-
-      - name: Run migrations
-        run: poetry run python manage.py migrate
 
       - name: Run black
         run: poetry run black . --check
@@ -76,11 +63,10 @@ jobs:
         run: poetry run isort . --check-only
 
       - name: Run flake8
-        run: poetry run flake8 .
+        run: poetry run flake8
 
       - name: Run tests
-        run: poetry run pytest --cov --cov-report=term-missing
+        run: poetry run pytest
 
-      # Opcional: Build Docker (remover se não precisar)
       - name: Build Docker image
         run: docker build -t twitter-clone-api:ci .
