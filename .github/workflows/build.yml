@@ -11,7 +11,7 @@ jobs:
 
     services:
       postgres:
-        image: postgres:15
+        image: postgres:14
         env:
           POSTGRES_DB: twitter_clone_api_dev_db
           POSTGRES_USER: twitter_clone_api_dev
@@ -43,7 +43,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.14"
 
       - name: Install Poetry
         run: |
