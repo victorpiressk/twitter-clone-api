@@ -1,72 +1,175 @@
-# 🐳 Docker Setup - Twitter Clone API
+# 🐳 Twitter Clone API - Docker
 
-Documentação para rodar o projeto com Docker em **ambiente de desenvolvimento**.
+Guia para executar a API usando Docker (imagem pronta do Docker Hub).
 
 ---
 
 ## 🎯 Objetivo
 
-Este setup Docker permite que desenvolvedores em **diferentes sistemas operacionais** (Windows, macOS, Linux) rodem o projeto localmente sem precisar configurar Python, PostgreSQL e dependências manualmente.
+Permitir que você rode a **Twitter Clone API** localmente usando apenas **Docker Desktop**.
+
+**Não é necessário:**
+- ❌ Clonar repositório
+- ❌ Instalar Python/Poetry
+- ❌ Configurar PostgreSQL manualmente
+- ❌ Instalar dependências
+
+**Apenas Docker Desktop!** 🎉
+
+---
+
+## 👨‍💻 Nota para Desenvolvedores
+
+Se você deseja **contribuir com o projeto**, **modificar o código-fonte** ou **fazer o setup completo de desenvolvimento**:
+
+👉 **Consulte o README principal:** [README.md](https://github.com/victorpiressk/twitter-clone-api#readme)
+
+Lá você encontrará:
+- Instruções para clonar o repositório
+- Setup do ambiente de desenvolvimento local
+- Guia de contribuição
+- Estrutura completa do projeto
+
+---
+
+**Este documento foca apenas em executar a aplicação** usando a imagem pronta do Docker Hub para testes e estudos.
 
 ---
 
 ## 📋 Pré-requisitos
 
 - **Docker Desktop** instalado ([Download](https://www.docker.com/products/docker-desktop))
-- **Docker Compose** (incluído no Docker Desktop)
+- **Docker Compose** (já vem incluído no Docker Desktop)
+
+**Verificar instalação:**
+```bash
+docker --version
+docker-compose --version
+```
+
+---
+
+## 🐳 Docker Hub
+
+**Imagem oficial:** https://hub.docker.com/r/victorpiressk/twitter-clone-api
+
+**Versões disponíveis:**
+- `latest` - Última versão estável
+- `1.0.0` - Release inicial (Janeiro 2026)
 
 ---
 
 ## 🚀 Quick Start
 
-### 1. Clonar o repositório
+### 1. Pull da imagem do Docker Hub
 ```bash
-git clone https://github.com/seu-usuario/twitter-clone-api.git
-cd twitter-clone-api
+docker pull victorpiressk/twitter-clone-api:latest
 ```
 
-### 2. Build da imagem Docker
-```bash
-docker-compose build
+---
+
+### 2. Criar arquivo docker-compose.yml
+
+Crie um arquivo `docker-compose.yml` no seu diretório:
+```yaml
+version: '3.9'
+
+services:
+  backend:
+    image: victorpiressk/twitter-clone-api:latest
+    container_name: twitter_clone_api
+    command: python manage.py runserver 0.0.0.0:8000
+    ports:
+      - "8000:8000"
+    environment:
+      - DEBUG=True
+      - SECRET_KEY=dev-secret-key-change-in-production
+      - ALLOWED_HOSTS=localhost,127.0.0.1,[::1]
+      - SQL_ENGINE=django.db.backends.postgresql
+      - SQL_DATABASE=twitter_clone_api_dev_db
+      - SQL_USER=twitter_clone_api_dev
+      - SQL_PASSWORD=twitter_clone_api_dev
+      - SQL_HOST=db
+      - SQL_PORT=5432
+      - CORS_ALLOWED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - twitter_network
+
+  db:
+    image: postgres:14.0-alpine
+    container_name: twitter_clone_db
+    environment:
+      - POSTGRES_DB=twitter_clone_api_dev_db
+      - POSTGRES_USER=twitter_clone_api_dev
+      - POSTGRES_PASSWORD=twitter_clone_api_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U twitter_clone_api_dev -d twitter_clone_api_dev_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - twitter_network
+
+volumes:
+  postgres_data:
+
+networks:
+  twitter_network:
+    driver: bridge
 ```
+
+---
 
 ### 3. Subir os containers
 ```bash
 docker-compose up -d
 ```
 
-### 4. Rodar migrations
+---
+
+### 4. Executar migrations
 ```bash
 docker-compose exec backend python manage.py migrate
 ```
 
-### 5. Criar superusuário
+---
+
+### 5. Criar superusuário (opcional)
 ```bash
 docker-compose exec backend python manage.py createsuperuser
 ```
 
-### 6. Acessar a aplicação
-
-- **API:** http://localhost:8000
-- **Admin:** http://localhost:8000/admin
-- **API Endpoints:** http://localhost:8000/api/
+Siga as instruções no terminal:
+- Username: `admin` (ou o que preferir)
+- Email: `admin@example.com`
+- Password: `sua_senha_segura`
 
 ---
 
-## 📝 Comandos Docker Compose
+### 6. Acessar a aplicação
+
+- **API:** http://localhost:8000/api/
+- **Admin:** http://localhost:8000/admin/
+- **Usuários:** http://localhost:8000/api/users/
+- **Posts:** http://localhost:8000/api/posts/
+
+---
+
+## 📝 Comandos Úteis
 
 ### Gerenciamento de Containers
 ```bash
-# Build das imagens
-docker-compose build
+# Ver status dos containers
+docker-compose ps
 
-# Subir containers (modo detached)
-docker-compose up -d
-
-# Parar containers
-docker-compose down
-
-# Ver logs de todos os containers
+# Ver logs em tempo real
 docker-compose logs -f
 
 # Ver logs apenas da API
@@ -75,31 +178,37 @@ docker-compose logs -f backend
 # Ver logs apenas do banco
 docker-compose logs -f db
 
-# Ver status dos containers
-docker-compose ps
+# Parar containers
+docker-compose down
+
+# Parar e remover volumes (apaga dados do banco!)
+docker-compose down -v
 
 # Reiniciar containers
 docker-compose restart
+
+# Reiniciar apenas a API
+docker-compose restart backend
 ```
 
 ---
 
 ### Django Management
 ```bash
-# Rodar migrations
-docker-compose exec backend python manage.py migrate
-
-# Criar migrations
-docker-compose exec backend python manage.py makemigrations
-
-# Criar superusuário
-docker-compose exec backend python manage.py createsuperuser
-
-# Shell do Django
+# Acessar shell do Django
 docker-compose exec backend python manage.py shell
 
 # Ver status das migrations
 docker-compose exec backend python manage.py showmigrations
+
+# Criar migrations (se modificou models)
+docker-compose exec backend python manage.py makemigrations
+
+# Executar migrations
+docker-compose exec backend python manage.py migrate
+
+# Listar todos os usuários
+docker-compose exec backend python manage.py shell -c "from users.models import User; print(User.objects.all())"
 ```
 
 ---
@@ -111,6 +220,9 @@ docker-compose exec backend /bin/bash
 
 # Entrar no PostgreSQL
 docker-compose exec db psql -U twitter_clone_api_dev -d twitter_clone_api_dev_db
+
+# Listar bancos de dados
+docker-compose exec db psql -U twitter_clone_api_dev -c "\l"
 ```
 
 ---
@@ -121,94 +233,49 @@ docker-compose exec db psql -U twitter_clone_api_dev -d twitter_clone_api_dev_db
 docker-compose exec backend pytest
 
 # Testes com cobertura
-docker-compose exec backend pytest --cov --cov-report=html
+docker-compose exec backend pytest --cov --cov-report=term-missing
 
-# Ver relatório de cobertura
-# Abrir: htmlcov/index.html no navegador
+# Rodar teste específico
+docker-compose exec backend pytest users/tests/test_models.py
 ```
-
----
-
-### Code Quality
-```bash
-# Formatar código com Black
-docker-compose exec backend black .
-
-# Verificar formatação (sem alterar)
-docker-compose exec backend black --check .
-
-# Organizar imports
-docker-compose exec backend isort .
-
-# Verificar código com Flake8
-docker-compose exec backend flake8 .
-```
-
----
-
-## 📦 Estrutura dos Containers
-
-### API Container (backend)
-- **Nome:** `backend`
-- **Porta:** 8000
-- **Imagem:** Python 3.14.0-slim + Poetry
-- **Comando:** `python manage.py runserver 0.0.0.0:8000`
-- **Volume:** Código mapeado para hot-reload
-
-### Database Container (db)
-- **Nome:** `db`
-- **Porta:** 5432
-- **Imagem:** PostgreSQL 14.0-alpine
-- **Banco:** `twitter_clone_api_dev_db`
-- **Usuário:** `twitter_clone_api_dev`
-- **Volume persistente:** `postgres_data`
 
 ---
 
 ## 🔐 Variáveis de Ambiente
 
-As variáveis estão no arquivo `.env.example`:
-```env
-# Django
-DEBUG=True
-SECRET_KEY=foo
-ALLOWED_HOSTS=localhost,127.0.0.1,[::1]
+As variáveis de ambiente estão configuradas diretamente no `docker-compose.yml`.
 
-# Database (PostgreSQL)
-SQL_ENGINE=django.db.backends.postgresql
-SQL_DATABASE=twitter_clone_api_dev_db
-SQL_USER=twitter_clone_api_dev
-SQL_PASSWORD=twitter_clone_api_dev
-SQL_HOST=db
-SQL_PORT=5432
+**Variáveis principais:**
 
-# CORS
-CORS_ALLOWED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
-```
+| Variável | Valor Padrão | Descrição |
+|----------|--------------|-----------|
+| `DEBUG` | `True` | Modo debug (dev only) |
+| `SECRET_KEY` | `dev-secret-key...` | Chave secreta Django |
+| `ALLOWED_HOSTS` | `localhost,127.0.0.1` | Hosts permitidos |
+| `SQL_DATABASE` | `twitter_clone_api_dev_db` | Nome do banco |
+| `SQL_USER` | `twitter_clone_api_dev` | Usuário do PostgreSQL |
+| `SQL_PASSWORD` | `twitter_clone_api_dev` | Senha do PostgreSQL |
+| `SQL_HOST` | `db` | Host do banco (nome do serviço) |
+| `SQL_PORT` | `5432` | Porta do PostgreSQL |
+| `CORS_ALLOWED_ORIGINS` | `http://localhost:3000` | Origens CORS permitidas |
 
-**Importante:** 
-- O projeto usa `SQL_*` para variáveis de banco (não `DB_*`)
-- O `docker-compose.yml` lê direto do `.env.example`
-- Para valores customizados, copie para `.env` e ajuste
+**Para alterar:** Edite o arquivo `docker-compose.yml` antes de subir os containers.
 
 ---
 
-## 🔄 Hot-Reload (Desenvolvimento)
+## 📦 Estrutura dos Containers
 
-O código está mapeado como volume no `docker-compose.yml`:
-```yaml
-volumes:
-  - .:/app
-```
+### Container: backend (API)
+- **Imagem:** `victorpiressk/twitter-clone-api:latest`
+- **Porta:** 8000
+- **Comando:** `python manage.py runserver 0.0.0.0:8000`
+- **Rede:** `twitter_network`
 
-**Isso significa:**
-- ✅ Edite arquivos localmente
-- ✅ Mudanças refletem automaticamente no container
-- ✅ Django runserver detecta e recarrega
-
-**Exceções (precisa rebuild):**
-- Mudanças no `Dockerfile`
-- Mudanças no `pyproject.toml` (dependências)
+### Container: db (PostgreSQL)
+- **Imagem:** `postgres:14.0-alpine`
+- **Porta:** 5432
+- **Volume:** `postgres_data` (persistente)
+- **Rede:** `twitter_network`
 
 ---
 
@@ -222,9 +289,8 @@ docker-compose logs backend
 # Verificar status
 docker-compose ps
 
-# Rebuild completo
-docker-compose down
-docker-compose build --no-cache
+# Remover tudo e começar do zero
+docker-compose down -v
 docker-compose up -d
 ```
 
@@ -233,12 +299,15 @@ docker-compose up -d
 ### Erro de conexão com banco
 ```bash
 # Verificar se banco está rodando
+docker-compose ps db
+
+# Ver logs do banco
 docker-compose logs db
 
 # Verificar saúde do banco
-docker-compose exec db pg_isready
+docker-compose exec db pg_isready -U twitter_clone_api_dev
 
-# Restart do banco
+# Reiniciar banco
 docker-compose restart db
 ```
 
@@ -246,28 +315,62 @@ docker-compose restart db
 
 ### Erro nas migrations
 ```bash
-# Ver status das migrations
+# Ver status
 docker-compose exec backend python manage.py showmigrations
 
 # Rodar migrations manualmente
 docker-compose exec backend python manage.py migrate
 
-# Se precisar, criar migrations
-docker-compose exec backend python manage.py makemigrations
+# Se falhar, recrie o banco
+docker-compose down -v
+docker-compose up -d
+docker-compose exec backend python manage.py migrate
 ```
 
 ---
 
-### Limpar tudo e começar do zero
+### Porta 8000 já está em uso
 ```bash
-# Para containers e remove volumes
+# Ver o que está usando a porta
+# Windows:
+netstat -ano | findstr :8000
+
+# Linux/Mac:
+lsof -i :8000
+
+# Mudar a porta no docker-compose.yml
+# Troque "8000:8000" por "8001:8000"
+# Acesse: http://localhost:8001
+```
+
+---
+
+### Container reiniciando constantemente
+```bash
+# Ver logs para identificar erro
+docker-compose logs -f backend
+
+# Possíveis causas:
+# - Banco não está pronto (aguarde ~30s)
+# - Erro nas migrations
+# - Variável de ambiente faltando
+```
+
+---
+
+### Resetar tudo (factory reset)
+```bash
+# Para todos os containers
 docker-compose down -v
 
-# Remove também as imagens
-docker-compose down -v --rmi all
+# Remove imagens (força download novamente)
+docker rmi victorpiressk/twitter-clone-api:latest
+docker rmi postgres:14.0-alpine
 
-# Rebuild completo
-docker-compose build
+# Pull fresco
+docker pull victorpiressk/twitter-clone-api:latest
+
+# Reinicia
 docker-compose up -d
 docker-compose exec backend python manage.py migrate
 docker-compose exec backend python manage.py createsuperuser
@@ -275,17 +378,33 @@ docker-compose exec backend python manage.py createsuperuser
 
 ---
 
-## 💾 Backup e Restore do Banco
+## 💾 Backup e Restore
 
-### Backup
+### Backup do Banco de Dados
 ```bash
-docker-compose exec -T db pg_dump -U twitter_clone_api_dev twitter_clone_api_dev_db > backup_$(date +%Y%m%d_%H%M%S).sql
+# Criar backup
+docker-compose exec -T db pg_dump -U twitter_clone_api_dev twitter_clone_api_dev_db > backup.sql
+
+# Verificar se foi criado
+ls -lh backup.sql
 ```
-> No Windows PowerShell, defina manualmente o nome do arquivo ou use Git Bash.
 
-### Restore
+**Windows PowerShell:**
+```powershell
+docker-compose exec -T db pg_dump -U twitter_clone_api_dev twitter_clone_api_dev_db | Out-File -Encoding utf8 backup.sql
+```
+
+---
+
+### Restore do Banco de Dados
 ```bash
-docker-compose exec -T db psql -U twitter_clone_api_dev twitter_clone_api_dev_db < backup_20260109_120000.sql
+# Restaurar backup
+docker-compose exec -T db psql -U twitter_clone_api_dev twitter_clone_api_dev_db < backup.sql
+```
+
+**Windows PowerShell:**
+```powershell
+Get-Content backup.sql | docker-compose exec -T db psql -U twitter_clone_api_dev twitter_clone_api_dev_db
 ```
 
 ---
@@ -294,175 +413,206 @@ docker-compose exec -T db psql -U twitter_clone_api_dev twitter_clone_api_dev_db
 
 ### Ver uso de recursos
 ```bash
-# Stats dos containers
+# Stats em tempo real
 docker stats
 
-# Apenas backend
-docker stats backend
-
-# Apenas db
-docker stats db
+# Apenas containers deste projeto
+docker stats backend db
 ```
 
 ---
 
-## 🎯 Workflow Típico
-
-### Setup Inicial (primeira vez)
+### Informações dos containers
 ```bash
-git clone <repo>
-cd twitter-clone-api
-docker-compose build
+# Inspecionar container
+docker inspect backend
+
+# Ver portas mapeadas
+docker port backend
+
+# Ver volumes
+docker volume ls
+docker volume inspect twitter_clone_postgres_data
+```
+
+---
+
+## 🎯 Casos de Uso
+
+### Caso 1: Testar a API rapidamente
+```bash
+# 1. Pull da imagem
+docker pull victorpiressk/twitter-clone-api:latest
+
+# 2. Criar docker-compose.yml (copie do Quick Start)
+
+# 3. Subir
 docker-compose up -d
+
+# 4. Migrations
 docker-compose exec backend python manage.py migrate
+
+# 5. Testar
+curl http://localhost:8000/api/users/
+```
+
+---
+
+### Caso 2: Estudar o projeto
+```bash
+# 1. Rodar aplicação
+docker-compose up -d
+
+# 2. Criar superuser
 docker-compose exec backend python manage.py createsuperuser
-# Acessar http://localhost:8000/admin
+
+# 3. Explorar admin
+# http://localhost:8000/admin
+
+# 4. Criar dados de teste
+docker-compose exec backend python manage.py shell
+>>> from users.models import User
+>>> User.objects.create_user(username='teste', email='teste@test.com', password='senha123')
 ```
 
 ---
 
-### Desenvolvimento Diário
+### Caso 3: Integração com Frontend
 ```bash
-# Subir containers
+# 1. Rodar a API
 docker-compose up -d
 
-# Trabalhar normalmente (hot-reload ativo)
-# Editar código localmente
+# 2. API disponível em:
+http://localhost:8000/api/
 
-# Ver logs se precisar
-docker-compose logs -f backend
-
-# Rodar testes
-docker-compose exec backend pytest
-
-# Parar no fim do dia
-docker-compose down
+# 3. Frontend pode consumir:
+# - Registro: POST /api/auth/register/
+# - Login: POST /api/auth/login/
+# - Posts: GET /api/posts/
+# - etc
 ```
 
----
-
-### Após git pull (atualizações)
-```bash
-# Se mudou Dockerfile ou pyproject.toml
-docker-compose build
-
-# Se mudou models
-docker-compose exec backend python manage.py makemigrations
-docker-compose exec backend python manage.py migrate
-
-# Restart
-docker-compose restart
-```
-
----
-
-## 🛑 Parar e Limpar
-```bash
-# Parar containers (mantém volumes)
-docker-compose down
-
-# Parar e remover volumes (perde dados do banco!)
-docker-compose down -v
-
-# Parar, remover volumes E imagens
-docker-compose down -v --rmi all
-```
+**Documentação completa da API:** [API_ENDPOINTS.md](https://github.com/victorpiressk/twitter-clone-api/blob/main/API_ENDPOINTS.md)
 
 ---
 
 ## ⚠️ Notas Importantes
 
-### 🔄 Sobre Produção e Deploy
+### 🧪 Apenas para Desenvolvimento e Testes
 
-Este projeto foi containerizado exclusivamente para facilitar o desenvolvimento local em diferentes sistemas operacionais (Windows, macOS e Linux).
+Esta imagem Docker foi criada **exclusivamente para desenvolvimento local e testes**.
 
----
-
-### 🧪 Ambiente de Desenvolvimento (Docker)
-
-#### No contexto de desenvolvimento, o Docker é utilizado para:
-
-- Padronizar o ambiente de execução
-- Evitar instalação manual de dependências
-- Facilitar onboarding de novos desenvolvedores
-- Garantir consistência entre máquinas
-
-#### Características do setup atual:
-
-- Django rodando com ``runserver``
-- ``DEBUG=True``
-- Hot-reload ativado via volumes
-- Variáveis de ambiente carregadas a partir de ``.env.example``
-- PostgreSQL local em container
-- Sem hardening de segurança
-
-Este não é um setup adequado para produção.
+**Características da imagem atual:**
+- ✅ Django `runserver` (não production-ready)
+- ✅ `DEBUG=True` habilitado
+- ✅ Sem otimizações de segurança
+- ✅ Sem configurações de performance
+- ✅ Configurações hardcoded para desenvolvimento
 
 ---
 
-### 🚀 Ambiente de Produção (Deploy)
+### 🚫 NÃO Utilize em Produção
 
-Para produção, a aplicação não utiliza Docker Compose nem este setup de desenvolvimento.
+**Para produção:**
+- ❌ Não use esta imagem Docker
+- ❌ Não use `docker-compose.yml` para deploy
+- ✅ Faça deploy direto da aplicação Django
+- ✅ Use Gunicorn como servidor WSGI
+- ✅ Configure variáveis de ambiente na plataforma
+- ✅ Use banco gerenciado (PostgreSQL)
 
-#### O fluxo recomendado é:
-
-- Deploy direto da aplicação Django
-- Uso de um servidor WSGI/ASGI (ex: Gunicorn)
-- Variáveis de ambiente configuradas diretamente na plataforma de deploy
-- Banco de dados gerenciado pela infraestrutura da plataforma (ex: PostgreSQL gerenciado)
-
-#### Exemplo de plataformas compatíveis:
-
+**Plataformas recomendadas para produção:**
 - Render
 - Railway
 - Fly.io
-- Heroku (ou similares)
+- Heroku
 
-#### Nesse cenário:
-
-- O Docker pode ser usado apenas como imagem base de build
-- O ``docker-compose.yml`` não é utilizado
-- ``.env.example`` serve apenas como referência
-- As variáveis sensíveis são definidas no painel da plataforma
+**Instruções de deploy:** [README.md - Seção Deploy](https://github.com/victorpiressk/twitter-clone-api#-deploy-em-produção)
 
 ---
 
-### 🐳 Docker Hub (Distribuição da Imagem)
+### 🔐 Segurança
 
-#### A imagem Docker deste projeto pode ser publicada no Docker Hub com fins de:
+**Variáveis de ambiente padrão são inseguras!**
 
-- Estudo
-- Demonstração técnica
-- Distribuição padronizada do ambiente
+Se você for expor a API publicamente (mesmo que temporariamente):
 
-#### Essa imagem:
+1. **Mude o `SECRET_KEY`:**
+```bash
+# Gerar nova chave
+python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
+```
 
-- Não é a mesma usada em produção
-- Serve como referência de arquitetura
-- Pode ser utilizada como base para outros projetos
+2. **Mude as senhas do banco:**
+```yaml
+SQL_PASSWORD=SuaSenhaMaisSegura123!
+```
+
+3. **Configure `ALLOWED_HOSTS` corretamente**
+
+4. **Nunca use `DEBUG=True` em produção**
 
 ---
 
 ### 📌 Resumo
 
-| Contexto              | Uso                        |
-| --------------------- | -------------------------- |
-| Desenvolvimento local | Docker + Docker Compose    |
-| Produção              | Deploy direto da aplicação |
-| Variáveis sensíveis   | Definidas na plataforma    |
-| Docker Hub            | Distribuição / estudo      |
+| Contexto | Usar esta imagem? | Como fazer? |
+|----------|-------------------|-------------|
+| **Testes locais** | ✅ SIM | Docker Compose |
+| **Estudos** | ✅ SIM | Docker Compose |
+| **Desenvolvimento** | ⚠️ Opcional | Melhor clonar repo |
+| **Produção** | ❌ NÃO | Deploy direto (Gunicorn) |
 
 ---
 
-## 📚 Recursos
+## 📚 Recursos Adicionais
 
+### Documentação
+- [README Principal](https://github.com/victorpiressk/twitter-clone-api#readme)
+- [Documentação da API](https://github.com/victorpiressk/twitter-clone-api/blob/main/API_ENDPOINTS.md)
 - [Docker Documentation](https://docs.docker.com/)
 - [Docker Compose Documentation](https://docs.docker.com/compose/)
-- [Django Documentation](https://docs.djangoproject.com/)
-- [PostgreSQL Documentation](https://www.postgresql.org/docs/)
+
+### Tecnologias Utilizadas
+- [Django 6.0](https://docs.djangoproject.com/)
+- [Django REST Framework](https://www.django-rest-framework.org/)
+- [PostgreSQL 14](https://www.postgresql.org/docs/14/)
+- [Poetry](https://python-poetry.org/)
+
+### Suporte
+- **Issues:** https://github.com/victorpiressk/twitter-clone-api/issues
+- **Discussões:** https://github.com/victorpiressk/twitter-clone-api/discussions
+
+---
+
+## 🤝 Contribuindo
+
+Quer contribuir com o projeto? 
+
+👉 **Veja o guia completo:** [README.md - Seção Contribuindo](https://github.com/victorpiressk/twitter-clone-api#-contribuindo)
+
+---
+
+## 📝 Licença
+
+Este projeto foi desenvolvido para fins educacionais.
+
+---
+
+## 👨‍💻 Autor
+
+**Victor Pires**
+- GitHub: [@victorpiressk](https://github.com/victorpiressk)
+- Docker Hub: [@victorpiressk](https://hub.docker.com/u/victorpiressk)
 
 ---
 
 **Última atualização:** Janeiro 2026  
-**Versão:** 1.0 (Development)  
-**Sistema:** Cross-platform (Windows, macOS, Linux)
+**Versão da Imagem:** 1.0.0  
+**Imagem Docker:** `victorpiressk/twitter-clone-api:latest`
+
+---
+
+⭐ **Se este projeto te ajudou, deixe uma estrela no GitHub!**
+
+🐳 **Pull da imagem:** `docker pull victorpiressk/twitter-clone-api:latest`
