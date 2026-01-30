@@ -2,10 +2,11 @@
 User ViewSet.
 """
 
-from rest_framework import viewsets
+from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from PIL import Image
 
 from users.models import User
 from users.permissions import IsOwnerOrReadOnly
@@ -37,10 +38,60 @@ class UserViewSet(viewsets.ModelViewSet):
         if self.action == "create":
             return [AllowAny()]
         if self.action in ["list", "retrieve", "followers", "following"]:
-            return [AllowAny()]  # ← Tornar público
+            return [AllowAny()]
         if self.action in ["update", "partial_update", "destroy"]:
             return [IsAuthenticated(), IsOwnerOrReadOnly()]
         return [IsAuthenticated()]
+
+    def perform_update(self, serializer):
+        """
+        Valida upload de imagens antes de atualizar.
+        """
+        # Validar banner se fornecido
+        banner = self.request.FILES.get('banner')
+        if banner:
+            self._validate_image(banner, max_size_mb=5, field_name='banner')
+        
+        # Validar profile_image se fornecido
+        profile_image = self.request.FILES.get('profile_image')
+        if profile_image:
+            self._validate_image(profile_image, max_size_mb=5, field_name='profile_image')
+        
+        serializer.save()
+
+    def _validate_image(self, image_file, max_size_mb=5, field_name='image'):
+        """
+        Valida tamanho e formato de imagem.
+        
+        Args:
+            image_file: Arquivo de imagem
+            max_size_mb: Tamanho máximo em MB
+            field_name: Nome do campo (para mensagem de erro)
+        
+        Raises:
+            ValidationError: Se imagem for inválida
+        """
+        from rest_framework.exceptions import ValidationError
+        
+        # Validar tamanho
+        max_size_bytes = max_size_mb * 1024 * 1024
+        if image_file.size > max_size_bytes:
+            raise ValidationError({
+                field_name: f"Imagem muito grande. Tamanho máximo: {max_size_mb}MB"
+            })
+        
+        # Validar formato
+        allowed_formats = ['JPEG', 'PNG', 'WEBP', 'JPG']
+        try:
+            img = Image.open(image_file)
+            if img.format not in allowed_formats:
+                raise ValidationError({
+                    field_name: f"Formato inválido. Formatos aceitos: {', '.join(allowed_formats)}"
+                })
+        except Exception:
+            raise ValidationError({
+                field_name: "Arquivo de imagem inválido ou corrompido."
+            })
 
     @action(detail=False, methods=["get"])
     def me(self, request):
