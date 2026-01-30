@@ -13,6 +13,10 @@ class User(AbstractUser):
     Adiciona campos específicos para a rede social:
     - bio: biografia do usuário
     - profile_image: foto de perfil
+    - banner: imagem de capa do perfil
+    - location: localização do usuário
+    - website: site pessoal
+    - birth_date: data de nascimento
     - created_at: data de criação
     - updated_at: data da última atualização
     """
@@ -32,6 +36,37 @@ class User(AbstractUser):
         null=True,
         verbose_name="Foto de perfil",
         help_text="Imagem de perfil do usuário",
+    )
+
+    # NOVOS CAMPOS
+    banner = models.ImageField(
+        upload_to="banners/",
+        blank=True,
+        null=True,
+        verbose_name="Banner do perfil",
+        help_text="Imagem de capa do perfil do usuário",
+    )
+
+    location = models.CharField(
+        max_length=100,
+        blank=True,
+        default="",
+        verbose_name="Localização",
+        help_text="Localização do usuário (cidade, país, etc)",
+    )
+
+    website = models.URLField(
+        blank=True,
+        default="",
+        verbose_name="Site pessoal",
+        help_text="URL do site ou blog pessoal",
+    )
+
+    birth_date = models.DateField(
+        blank=True,
+        null=True,
+        verbose_name="Data de nascimento",
+        help_text="Data de nascimento do usuário",
     )
 
     # Timestamps
