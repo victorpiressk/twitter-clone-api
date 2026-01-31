@@ -3,8 +3,8 @@ User serializers.
 """
 
 from rest_framework import serializers
-from django.utils import timezone
 from datetime import date
+from PIL import Image
 
 from users.models import User
 
@@ -13,11 +13,6 @@ class UserSerializer(serializers.ModelSerializer):
     """
     Serializer para exibição de usuário.
     """
-
-    # Contadores como properties
-    followers_count = serializers.ReadOnlyField()
-    following_count = serializers.ReadOnlyField()
-    posts_count = serializers.ReadOnlyField()
     
     # ✨ NOVO: Stats como objeto aninhado
     stats = serializers.SerializerMethodField()
@@ -32,7 +27,6 @@ class UserSerializer(serializers.ModelSerializer):
             "last_name",
             "bio",
             "profile_image",
-            # ✨ NOVOS CAMPOS
             "banner",
             "location",
             "website",
@@ -49,6 +43,31 @@ class UserSerializer(serializers.ModelSerializer):
             "following": obj.following_count,
             "followers": obj.followers_count,
         }
+    
+    def _validate_image(self, image_file, max_size_mb=5):
+        """Método auxiliar interno do Serializer."""
+        # Validação de tamanho
+        if image_file.size > max_size_mb * 1024 * 1024:
+            raise serializers.ValidationError(f"Imagem muito grande. Máximo: {max_size_mb}MB")
+        
+        # Validação de formato (opcional, o Django já faz o básico, mas aqui você garante)
+        allowed_formats = ['JPEG', 'PNG', 'WEBP', 'JPG']
+        try:
+            img = Image.open(image_file)
+            if img.format not in allowed_formats:
+                raise serializers.ValidationError(f"Formato {img.format} não aceito.")
+        except Exception:
+            raise serializers.ValidationError("Arquivo de imagem inválido.")
+
+    def validate_banner(self, value):
+        if value:
+            self._validate_image(value, max_size_mb=5)
+        return value
+
+    def validate_profile_image(self, value):
+        if value:
+            self._validate_image(value, max_size_mb=2) # Ex: Limite diferente para avatar
+        return value
 
     def validate_website(self, value):
         """Valida formato da URL do website."""
