@@ -2,6 +2,8 @@
 Testes para os models do app users.
 """
 
+from datetime import date
+
 from django.contrib.auth import get_user_model
 
 import pytest
@@ -50,6 +52,33 @@ class TestUserModel:
         user = User.objects.create_user(username="testuser", password="testpass123")
 
         assert user.bio == ""
+
+    def test_user_with_all_fields(self):
+        """Testa criação de usuário com todos os campos."""
+        user = User.objects.create_user(
+            username="testuser",
+            email="test@example.com",
+            password="testpass123",
+            first_name="Test",
+            last_name="User",
+            bio="Desenvolvedor fullstack",
+            location="São Paulo, Brasil",
+            website="https://example.com",
+            birth_date=date(1995, 5, 15),
+        )
+
+        assert user.location == "São Paulo, Brasil"
+        assert user.website == "https://example.com"
+        assert user.birth_date == date(1995, 5, 15)
+
+    def test_user_optional_fields_default(self):
+        """Testa valores padrão dos campos opcionais."""
+        user = User.objects.create_user(username="testuser", password="testpass123")
+
+        assert user.banner.name is None or user.banner.name == ""
+        assert user.location == ""
+        assert user.website == ""
+        assert user.birth_date is None
 
     def test_user_followers_count(self):
         """Testa contagem de seguidores."""

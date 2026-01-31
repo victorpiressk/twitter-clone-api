@@ -37,7 +37,7 @@ class UserViewSet(viewsets.ModelViewSet):
         if self.action == "create":
             return [AllowAny()]
         if self.action in ["list", "retrieve", "followers", "following"]:
-            return [AllowAny()]  # ← Tornar público
+            return [AllowAny()]
         if self.action in ["update", "partial_update", "destroy"]:
             return [IsAuthenticated(), IsOwnerOrReadOnly()]
         return [IsAuthenticated()]

@@ -2,6 +2,9 @@
 User serializers.
 """
 
+from datetime import date
+
+from PIL import Image
 from rest_framework import serializers
 
 from users.models import User
@@ -12,9 +15,8 @@ class UserSerializer(serializers.ModelSerializer):
     Serializer para exibição de usuário.
     """
 
-    followers_count = serializers.ReadOnlyField()
-    following_count = serializers.ReadOnlyField()
-    posts_count = serializers.ReadOnlyField()
+    # ✨ NOVO: Stats como objeto aninhado
+    stats = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -26,12 +28,81 @@ class UserSerializer(serializers.ModelSerializer):
             "last_name",
             "bio",
             "profile_image",
-            "followers_count",
-            "following_count",
-            "posts_count",
+            "banner",
+            "location",
+            "website",
+            "birth_date",
+            "stats",  # objeto aninhado
             "created_at",
         ]
-        read_only_fields = ["id", "created_at"]
+        read_only_fields = ["id", "created_at", "stats"]
+
+    def get_stats(self, obj):
+        """Retorna estatísticas do usuário como objeto."""
+        return {
+            "posts": obj.posts_count,
+            "following": obj.following_count,
+            "followers": obj.followers_count,
+        }
+
+    def _validate_image(self, image_file, max_size_mb=5):
+        """Método auxiliar interno do Serializer."""
+        # Validação de tamanho
+        if image_file.size > max_size_mb * 1024 * 1024:
+            raise serializers.ValidationError(
+                f"Imagem muito grande. Máximo: {max_size_mb}MB"
+            )
+
+        # Validação de formato
+        allowed_formats = ["JPEG", "PNG", "WEBP", "JPG"]
+        try:
+            img = Image.open(image_file)
+            if img.format not in allowed_formats:
+                raise serializers.ValidationError(f"Formato {img.format} não aceito.")
+        except Exception:
+            raise serializers.ValidationError("Arquivo de imagem inválido.")
+
+    def validate_banner(self, value):
+        if value:
+            self._validate_image(value, max_size_mb=5)
+        return value
+
+    def validate_profile_image(self, value):
+        if value:
+            self._validate_image(
+                value, max_size_mb=2
+            )  # Ex: Limite diferente para avatar
+        return value
+
+    def validate_website(self, value):
+        """Valida formato da URL do website."""
+        if value and not value.startswith(("http://", "https://")):
+            raise serializers.ValidationError(
+                "URL deve começar com http:// ou https://"
+            )
+        return value
+
+    def validate_birth_date(self, value):
+        """Valida idade mínima de 13 anos."""
+        if value:
+            today = date.today()
+            age = (
+                today.year
+                - value.year
+                - ((today.month, today.day) < (value.month, value.day))
+            )
+
+            if age < 13:
+                raise serializers.ValidationError(
+                    "Você deve ter pelo menos 13 anos para se cadastrar."
+                )
+
+            if value > today:
+                raise serializers.ValidationError(
+                    "Data de nascimento não pode ser no futuro."
+                )
+
+        return value
 
 
 class UserCreateSerializer(serializers.ModelSerializer):
