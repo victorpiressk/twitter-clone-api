@@ -2,8 +2,9 @@
 Testes para os models do app users.
 """
 
+from datetime import date
+
 from django.contrib.auth import get_user_model
-from datetime import date, timedelta
 
 import pytest
 

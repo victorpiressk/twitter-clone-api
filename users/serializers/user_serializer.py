@@ -2,9 +2,10 @@
 User serializers.
 """
 
-from rest_framework import serializers
 from datetime import date
+
 from PIL import Image
+from rest_framework import serializers
 
 from users.models import User
 
@@ -13,7 +14,7 @@ class UserSerializer(serializers.ModelSerializer):
     """
     Serializer para exibição de usuário.
     """
-    
+
     # ✨ NOVO: Stats como objeto aninhado
     stats = serializers.SerializerMethodField()
 
@@ -43,15 +44,17 @@ class UserSerializer(serializers.ModelSerializer):
             "following": obj.following_count,
             "followers": obj.followers_count,
         }
-    
+
     def _validate_image(self, image_file, max_size_mb=5):
         """Método auxiliar interno do Serializer."""
         # Validação de tamanho
         if image_file.size > max_size_mb * 1024 * 1024:
-            raise serializers.ValidationError(f"Imagem muito grande. Máximo: {max_size_mb}MB")
-        
-        # Validação de formato (opcional, o Django já faz o básico, mas aqui você garante)
-        allowed_formats = ['JPEG', 'PNG', 'WEBP', 'JPG']
+            raise serializers.ValidationError(
+                f"Imagem muito grande. Máximo: {max_size_mb}MB"
+            )
+
+        # Validação de formato
+        allowed_formats = ["JPEG", "PNG", "WEBP", "JPG"]
         try:
             img = Image.open(image_file)
             if img.format not in allowed_formats:
@@ -66,12 +69,14 @@ class UserSerializer(serializers.ModelSerializer):
 
     def validate_profile_image(self, value):
         if value:
-            self._validate_image(value, max_size_mb=2) # Ex: Limite diferente para avatar
+            self._validate_image(
+                value, max_size_mb=2
+            )  # Ex: Limite diferente para avatar
         return value
 
     def validate_website(self, value):
         """Valida formato da URL do website."""
-        if value and not value.startswith(('http://', 'https://')):
+        if value and not value.startswith(("http://", "https://")):
             raise serializers.ValidationError(
                 "URL deve começar com http:// ou https://"
             )
@@ -81,18 +86,22 @@ class UserSerializer(serializers.ModelSerializer):
         """Valida idade mínima de 13 anos."""
         if value:
             today = date.today()
-            age = today.year - value.year - ((today.month, today.day) < (value.month, value.day))
-            
+            age = (
+                today.year
+                - value.year
+                - ((today.month, today.day) < (value.month, value.day))
+            )
+
             if age < 13:
                 raise serializers.ValidationError(
                     "Você deve ter pelo menos 13 anos para se cadastrar."
                 )
-            
+
             if value > today:
                 raise serializers.ValidationError(
                     "Data de nascimento não pode ser no futuro."
                 )
-        
+
         return value
 
 

@@ -2,14 +2,15 @@
 Testes para as views do app users.
 """
 
-from django.contrib.auth import get_user_model
-from django.urls import reverse
-from django.core.files.uploadedfile import SimpleUploadedFile
 from datetime import date, timedelta
 from io import BytesIO
-from PIL import Image
+
+from django.contrib.auth import get_user_model
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.urls import reverse
 
 import pytest
+from PIL import Image
 from rest_framework import status
 from rest_framework.test import APIClient
 
@@ -42,10 +43,10 @@ def authenticated_client(api_client, user):
 def create_test_image():
     """Cria uma imagem de teste."""
     file = BytesIO()
-    image = Image.new('RGB', (100, 100), color='red')
-    image.save(file, 'PNG')
+    image = Image.new("RGB", (100, 100), color="red")
+    image.save(file, "PNG")
     file.seek(0)
-    return SimpleUploadedFile('test.png', file.read(), content_type='image/png')
+    return SimpleUploadedFile("test.png", file.read(), content_type="image/png")
 
 
 @pytest.mark.django_db
@@ -91,37 +92,35 @@ class TestUserViewSet:
     def test_update_user_with_banner(self, authenticated_client, user):
         """Testa atualização de usuário com banner."""
         url = reverse("user-detail", kwargs={"pk": user.pk})
-        
+
         banner = create_test_image()
-        
+
         data = {
             "banner": banner,
             "location": "São Paulo, Brasil",
         }
 
-        response = authenticated_client.patch(url, data, format='multipart')
+        response = authenticated_client.patch(url, data, format="multipart")
 
         assert response.status_code == status.HTTP_200_OK
         assert response.data["location"] == "São Paulo, Brasil"
         assert "banner" in response.data
-        
+
         user.refresh_from_db()
         assert user.banner is not None
-
-    
 
     def test_update_user_profile_image_valid(self, authenticated_client, user):
         """Testa upload de profile_image válido."""
         url = reverse("user-detail", kwargs={"pk": user.pk})
-        
+
         profile_image = create_test_image()
-        
+
         data = {"profile_image": profile_image}
 
-        response = authenticated_client.patch(url, data, format='multipart')
+        response = authenticated_client.patch(url, data, format="multipart")
 
         assert response.status_code == status.HTTP_200_OK
-        
+
         user.refresh_from_db()
         assert user.profile_image is not None
 
@@ -129,13 +128,13 @@ class TestUserViewSet:
     def test_update_user_location_website(self, authenticated_client, user):
         """Testa atualização de location e website."""
         url = reverse("user-detail", kwargs={"pk": user.pk})
-        
+
         data = {
             "location": "Rio de Janeiro, Brasil",
             "website": "https://example.com",
         }
 
-        response = authenticated_client.patch(url, data, format='json')
+        response = authenticated_client.patch(url, data, format="json")
 
         assert response.status_code == status.HTTP_200_OK
         assert response.data["location"] == "Rio de Janeiro, Brasil"
@@ -144,10 +143,10 @@ class TestUserViewSet:
     def test_update_user_invalid_website(self, authenticated_client, user):
         """Testa que website inválido retorna erro."""
         url = reverse("user-detail", kwargs={"pk": user.pk})
-        
+
         data = {"website": "invalid-url"}
 
-        response = authenticated_client.patch(url, data, format='json')
+        response = authenticated_client.patch(url, data, format="json")
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert "website" in response.data
@@ -155,12 +154,12 @@ class TestUserViewSet:
     def test_update_user_birth_date_valid(self, authenticated_client, user):
         """Testa atualização de birth_date válida."""
         url = reverse("user-detail", kwargs={"pk": user.pk})
-        
+
         birth_date = date.today() - timedelta(days=365 * 20)  # 20 anos
-        
+
         data = {"birth_date": birth_date.isoformat()}
 
-        response = authenticated_client.patch(url, data, format='json')
+        response = authenticated_client.patch(url, data, format="json")
 
         assert response.status_code == status.HTTP_200_OK
         assert response.data["birth_date"] == birth_date.isoformat()
@@ -182,12 +181,12 @@ class TestUserViewSet:
     def test_cannot_update_other_user(self, authenticated_client):
         """Testa que usuário não pode editar perfil de outro."""
         other_user = User.objects.create_user(username="other", password="pass123")
-        
+
         url = reverse("user-detail", kwargs={"pk": other_user.pk})
-        
+
         data = {"location": "Tentando editar outro usuário"}
 
-        response = authenticated_client.patch(url, data, format='json')
+        response = authenticated_client.patch(url, data, format="json")
 
         assert response.status_code == status.HTTP_403_FORBIDDEN
 
