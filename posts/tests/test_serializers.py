@@ -76,13 +76,10 @@ class TestPostSerializer:
         """Testa serialização de retweet."""
         author = User.objects.create_user(username="author", password="pass123")
         retweeter = User.objects.create_user(username="retweeter", password="pass123")
-        
+
         original_post = Post.objects.create(author=author, content="Original")
         retweet = Post.objects.create(
-            author=retweeter,
-            content="",
-            is_retweet=True,
-            retweet_of=original_post
+            author=retweeter, content="", is_retweet=True, retweet_of=original_post
         )
 
         serializer = PostSerializer(retweet)
@@ -96,13 +93,13 @@ class TestPostSerializer:
         """Testa serialização de quote retweet."""
         author = User.objects.create_user(username="author", password="pass123")
         retweeter = User.objects.create_user(username="retweeter", password="pass123")
-        
+
         original_post = Post.objects.create(author=author, content="Original")
         quote_retweet = Post.objects.create(
             author=retweeter,
             content="Concordo!",
             is_retweet=True,
-            retweet_of=original_post
+            retweet_of=original_post,
         )
 
         serializer = PostSerializer(quote_retweet)
@@ -116,23 +113,20 @@ class TestPostSerializer:
         """Testa que is_retweeted retorna True se usuário retweetou."""
         author = User.objects.create_user(username="author", password="pass123")
         retweeter = User.objects.create_user(username="retweeter", password="pass123")
-        
+
         original_post = Post.objects.create(author=author, content="Original")
-        
+
         # Criar retweet
         Post.objects.create(
-            author=retweeter,
-            content="",
-            is_retweet=True,
-            retweet_of=original_post
+            author=retweeter, content="", is_retweet=True, retweet_of=original_post
         )
 
         # Criar request mock com usuário autenticado
         factory = APIRequestFactory()
-        request = factory.get('/')
+        request = factory.get("/")
         request.user = retweeter
 
-        serializer = PostSerializer(original_post, context={'request': request})
+        serializer = PostSerializer(original_post, context={"request": request})
         data = serializer.data
 
         assert data["is_retweeted"] is True
@@ -141,15 +135,15 @@ class TestPostSerializer:
         """Testa que is_retweeted retorna False se usuário não retweetou."""
         author = User.objects.create_user(username="author", password="pass123")
         user = User.objects.create_user(username="user", password="pass123")
-        
+
         post = Post.objects.create(author=author, content="Test")
 
         # Criar request mock com usuário autenticado
         factory = APIRequestFactory()
-        request = factory.get('/')
+        request = factory.get("/")
         request.user = user
 
-        serializer = PostSerializer(post, context={'request': request})
+        serializer = PostSerializer(post, context={"request": request})
         data = serializer.data
 
         assert data["is_retweeted"] is False
@@ -158,7 +152,7 @@ class TestPostSerializer:
         """Testa que retweets_count aparece em stats."""
         author = User.objects.create_user(username="author", password="pass123")
         post = Post.objects.create(author=author, content="Test")
-        
+
         # Manualmente incrementar contador
         post.retweets_count = 5
         post.save()

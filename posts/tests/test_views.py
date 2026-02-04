@@ -166,11 +166,9 @@ class TestPostViewSet:
 
         assert response.status_code == status.HTTP_201_CREATED
         assert Post.objects.filter(
-            author=user,
-            is_retweet=True,
-            retweet_of=post
+            author=user, is_retweet=True, retweet_of=post
         ).exists()
-        
+
         post.refresh_from_db()
         assert post.retweets_count == 1
 
@@ -188,12 +186,7 @@ class TestPostViewSet:
         post = Post.objects.create(author=another_user, content="Original")
 
         # Primeiro retweet
-        Post.objects.create(
-            author=user,
-            content="",
-            is_retweet=True,
-            retweet_of=post
-        )
+        Post.objects.create(author=user, content="", is_retweet=True, retweet_of=post)
 
         # Tentar retweetar novamente
         url = reverse("post-retweet", kwargs={"pk": post.pk})
@@ -212,18 +205,16 @@ class TestPostViewSet:
         )
 
         assert response.status_code == status.HTTP_201_CREATED
-        
-        quote_retweet = Post.objects.get(
-            author=user,
-            is_retweet=True,
-            retweet_of=post
-        )
+
+        quote_retweet = Post.objects.get(author=user, is_retweet=True, retweet_of=post)
         assert quote_retweet.content == "Concordo totalmente!"
-        
+
         post.refresh_from_db()
         assert post.retweets_count == 1
 
-    def test_quote_retweet_empty_content(self, authenticated_client, user, another_user):
+    def test_quote_retweet_empty_content(
+        self, authenticated_client, user, another_user
+    ):
         """Testa que quote retweet sem comentário retorna erro."""
         post = Post.objects.create(author=another_user, content="Original")
 
@@ -253,23 +244,16 @@ class TestPostViewSet:
         post.save()
 
         # Criar retweet
-        Post.objects.create(
-            author=user,
-            content="",
-            is_retweet=True,
-            retweet_of=post
-        )
+        Post.objects.create(author=user, content="", is_retweet=True, retweet_of=post)
 
         url = reverse("post-unretweet", kwargs={"pk": post.pk})
         response = authenticated_client.delete(url)
 
         assert response.status_code == status.HTTP_204_NO_CONTENT
         assert not Post.objects.filter(
-            author=user,
-            is_retweet=True,
-            retweet_of=post
+            author=user, is_retweet=True, retweet_of=post
         ).exists()
-        
+
         post.refresh_from_db()
         assert post.retweets_count == 0
 
@@ -294,19 +278,16 @@ class TestPostViewSet:
         post.refresh_from_db()
         assert post.retweets_count == 1
 
-    def test_unretweet_decrements_counter(self, authenticated_client, user, another_user):
+    def test_unretweet_decrements_counter(
+        self, authenticated_client, user, another_user
+    ):
         """Testa que unretweet decrementa contador."""
         post = Post.objects.create(author=another_user, content="Original")
         post.retweets_count = 5
         post.save()
 
         # Criar retweet
-        Post.objects.create(
-            author=user,
-            content="",
-            is_retweet=True,
-            retweet_of=post
-        )
+        Post.objects.create(author=user, content="", is_retweet=True, retweet_of=post)
 
         url = reverse("post-unretweet", kwargs={"pk": post.pk})
         authenticated_client.delete(url)

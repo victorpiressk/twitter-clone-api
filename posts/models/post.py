@@ -87,4 +87,3 @@ class Post(models.Model):
     def comments_count(self):
         """Retorna quantidade de comentários."""
         return self.comments.count()
-    

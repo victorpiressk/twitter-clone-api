@@ -42,13 +42,10 @@ class TestPostModel:
         """Testa criação de retweet."""
         author = User.objects.create_user(username="author", password="pass123")
         retweeter = User.objects.create_user(username="retweeter", password="pass123")
-        
+
         original_post = Post.objects.create(author=author, content="Original post")
         retweet = Post.objects.create(
-            author=retweeter,
-            content="",
-            is_retweet=True,
-            retweet_of=original_post
+            author=retweeter, content="", is_retweet=True, retweet_of=original_post
         )
 
         assert retweet.is_retweet is True
@@ -59,13 +56,13 @@ class TestPostModel:
         """Testa criação de quote retweet (retweet com comentário)."""
         author = User.objects.create_user(username="author", password="pass123")
         retweeter = User.objects.create_user(username="retweeter", password="pass123")
-        
+
         original_post = Post.objects.create(author=author, content="Original post")
         quote_retweet = Post.objects.create(
             author=retweeter,
             content="Concordo totalmente!",
             is_retweet=True,
-            retweet_of=original_post
+            retweet_of=original_post,
         )
 
         assert quote_retweet.is_retweet is True
@@ -76,13 +73,10 @@ class TestPostModel:
         """Testa representação string de retweet."""
         author = User.objects.create_user(username="author", password="pass123")
         retweeter = User.objects.create_user(username="retweeter", password="pass123")
-        
+
         original_post = Post.objects.create(author=author, content="Original content")
         retweet = Post.objects.create(
-            author=retweeter,
-            content="",
-            is_retweet=True,
-            retweet_of=original_post
+            author=retweeter, content="", is_retweet=True, retweet_of=original_post
         )
 
         retweet_str = str(retweet)

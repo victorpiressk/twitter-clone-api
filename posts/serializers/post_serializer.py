@@ -14,10 +14,10 @@ class PostSerializer(serializers.ModelSerializer):
     """
 
     author = UserSerializer(read_only=True)
-    
+
     # Stats como objeto aninhado
     stats = serializers.SerializerMethodField()
-    
+
     # Estado de interação do usuário
     is_retweeted = serializers.SerializerMethodField()
 
@@ -60,9 +60,7 @@ class PostSerializer(serializers.ModelSerializer):
         request = self.context.get("request")
         if request and request.user.is_authenticated:
             return Post.objects.filter(
-                author=request.user,
-                is_retweet=True,
-                retweet_of=obj
+                author=request.user, is_retweet=True, retweet_of=obj
             ).exists()
         return False
 
@@ -84,4 +82,3 @@ class PostCreateSerializer(serializers.ModelSerializer):
         if not value.strip():
             raise serializers.ValidationError("O conteúdo não pode estar vazio.")
         return value
-    
