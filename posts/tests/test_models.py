@@ -37,6 +37,59 @@ class TestPostModel:
         assert "testuser" in post_str
         assert len(post_str) <= 60  # Username + 50 chars de conteúdo + ": "
 
+    # TESTES - Retweets
+    def test_create_retweet(self):
+        """Testa criação de retweet."""
+        author = User.objects.create_user(username="author", password="pass123")
+        retweeter = User.objects.create_user(username="retweeter", password="pass123")
+
+        original_post = Post.objects.create(author=author, content="Original post")
+        retweet = Post.objects.create(
+            author=retweeter, content="", is_retweet=True, retweet_of=original_post
+        )
+
+        assert retweet.is_retweet is True
+        assert retweet.retweet_of == original_post
+        assert retweet.author == retweeter
+
+    def test_create_quote_retweet(self):
+        """Testa criação de quote retweet (retweet com comentário)."""
+        author = User.objects.create_user(username="author", password="pass123")
+        retweeter = User.objects.create_user(username="retweeter", password="pass123")
+
+        original_post = Post.objects.create(author=author, content="Original post")
+        quote_retweet = Post.objects.create(
+            author=retweeter,
+            content="Concordo totalmente!",
+            is_retweet=True,
+            retweet_of=original_post,
+        )
+
+        assert quote_retweet.is_retweet is True
+        assert quote_retweet.retweet_of == original_post
+        assert quote_retweet.content == "Concordo totalmente!"
+
+    def test_retweet_str(self):
+        """Testa representação string de retweet."""
+        author = User.objects.create_user(username="author", password="pass123")
+        retweeter = User.objects.create_user(username="retweeter", password="pass123")
+
+        original_post = Post.objects.create(author=author, content="Original content")
+        retweet = Post.objects.create(
+            author=retweeter, content="", is_retweet=True, retweet_of=original_post
+        )
+
+        retweet_str = str(retweet)
+        assert "retweeter" in retweet_str
+        assert "retweetou" in retweet_str
+
+    def test_retweets_count_default(self):
+        """Testa que retweets_count começa em 0."""
+        user = User.objects.create_user(username="author", password="pass123")
+        post = Post.objects.create(author=user, content="Test")
+
+        assert post.retweets_count == 0
+
     def test_post_likes_count(self):
         """Testa contagem de curtidas."""
         user = User.objects.create_user(username="author", password="pass123")

@@ -11,6 +11,7 @@ class Post(models.Model):
     Modelo para postagens (tweets).
 
     Representa uma publicação feita por um usuário.
+    Pode ser um post normal ou um retweet de outro post.
     """
 
     author = models.ForeignKey(
@@ -34,6 +35,29 @@ class Post(models.Model):
         help_text="Imagem anexada ao post (opcional)",
     )
 
+    # CAMPOS DE RETWEET
+    is_retweet = models.BooleanField(
+        default=False,
+        verbose_name="É retweet",
+        help_text="Indica se este post é um retweet de outro post",
+    )
+
+    retweet_of = models.ForeignKey(
+        "self",
+        related_name="retweets",
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True,
+        verbose_name="Retweet de",
+        help_text="Post original sendo retweetado (se aplicável)",
+    )
+
+    retweets_count = models.IntegerField(
+        default=0,
+        verbose_name="Quantidade de retweets",
+        help_text="Contador de quantas vezes este post foi retweetado",
+    )
+
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Criado em")
 
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Atualizado em")
@@ -45,9 +69,13 @@ class Post(models.Model):
         indexes = [
             models.Index(fields=["-created_at"]),
             models.Index(fields=["author", "-created_at"]),
+            models.Index(fields=["is_retweet"]),
+            models.Index(fields=["retweet_of"]),
         ]
 
     def __str__(self):
+        if self.is_retweet and self.retweet_of:
+            return f"{self.author.username} retweetou: {self.retweet_of.content[:50]}"
         return f"{self.author.username}: {self.content[:50]}"
 
     @property
