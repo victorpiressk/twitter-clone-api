@@ -5,6 +5,7 @@ Testes para os serializers do app posts.
 from django.contrib.auth import get_user_model
 
 import pytest
+from rest_framework.test import APIRequestFactory
 
 from posts.models import Comment, Like, Post
 from posts.serializers import (
@@ -31,9 +32,23 @@ class TestPostSerializer:
 
         assert data["content"] == "Test post content"
         assert data["author"]["username"] == "author"
-        assert data["likes_count"] == 0
-        assert data["comments_count"] == 0
         assert "created_at" in data
+
+    # TESTE - Stats como objeto
+    def test_serialize_post_stats_object(self):
+        """Testa que stats é retornado como objeto."""
+        author = User.objects.create_user(username="author", password="pass123")
+        post = Post.objects.create(author=author, content="Test")
+
+        serializer = PostSerializer(post)
+        data = serializer.data
+
+        assert "stats" in data
+        assert isinstance(data["stats"], dict)
+        assert data["stats"]["comments"] == 0
+        assert data["stats"]["retweets"] == 0
+        assert data["stats"]["likes"] == 0
+        assert data["stats"]["views"] == 0
 
     def test_serialize_post_with_counts(self):
         """Testa serialização com contadores."""
@@ -53,8 +68,105 @@ class TestPostSerializer:
         serializer = PostSerializer(post)
         data = serializer.data
 
-        assert data["likes_count"] == 2
-        assert data["comments_count"] == 3
+        assert data["stats"]["likes"] == 2
+        assert data["stats"]["comments"] == 3
+
+    # ✨ TESTES - Retweets
+    def test_serialize_retweet(self):
+        """Testa serialização de retweet."""
+        author = User.objects.create_user(username="author", password="pass123")
+        retweeter = User.objects.create_user(username="retweeter", password="pass123")
+        
+        original_post = Post.objects.create(author=author, content="Original")
+        retweet = Post.objects.create(
+            author=retweeter,
+            content="",
+            is_retweet=True,
+            retweet_of=original_post
+        )
+
+        serializer = PostSerializer(retweet)
+        data = serializer.data
+
+        assert data["is_retweet"] is True
+        assert data["retweet_of"] == original_post.id
+        assert data["author"]["username"] == "retweeter"
+
+    def test_serialize_quote_retweet(self):
+        """Testa serialização de quote retweet."""
+        author = User.objects.create_user(username="author", password="pass123")
+        retweeter = User.objects.create_user(username="retweeter", password="pass123")
+        
+        original_post = Post.objects.create(author=author, content="Original")
+        quote_retweet = Post.objects.create(
+            author=retweeter,
+            content="Concordo!",
+            is_retweet=True,
+            retweet_of=original_post
+        )
+
+        serializer = PostSerializer(quote_retweet)
+        data = serializer.data
+
+        assert data["is_retweet"] is True
+        assert data["retweet_of"] == original_post.id
+        assert data["content"] == "Concordo!"
+
+    def test_is_retweeted_true(self):
+        """Testa que is_retweeted retorna True se usuário retweetou."""
+        author = User.objects.create_user(username="author", password="pass123")
+        retweeter = User.objects.create_user(username="retweeter", password="pass123")
+        
+        original_post = Post.objects.create(author=author, content="Original")
+        
+        # Criar retweet
+        Post.objects.create(
+            author=retweeter,
+            content="",
+            is_retweet=True,
+            retweet_of=original_post
+        )
+
+        # Criar request mock com usuário autenticado
+        factory = APIRequestFactory()
+        request = factory.get('/')
+        request.user = retweeter
+
+        serializer = PostSerializer(original_post, context={'request': request})
+        data = serializer.data
+
+        assert data["is_retweeted"] is True
+
+    def test_is_retweeted_false(self):
+        """Testa que is_retweeted retorna False se usuário não retweetou."""
+        author = User.objects.create_user(username="author", password="pass123")
+        user = User.objects.create_user(username="user", password="pass123")
+        
+        post = Post.objects.create(author=author, content="Test")
+
+        # Criar request mock com usuário autenticado
+        factory = APIRequestFactory()
+        request = factory.get('/')
+        request.user = user
+
+        serializer = PostSerializer(post, context={'request': request})
+        data = serializer.data
+
+        assert data["is_retweeted"] is False
+
+    def test_retweets_count_in_stats(self):
+        """Testa que retweets_count aparece em stats."""
+        author = User.objects.create_user(username="author", password="pass123")
+        post = Post.objects.create(author=author, content="Test")
+        
+        # Manualmente incrementar contador
+        post.retweets_count = 5
+        post.save()
+
+        serializer = PostSerializer(post)
+        data = serializer.data
+
+        assert data["stats"]["retweets"] == 5
 
 
 @pytest.mark.django_db
