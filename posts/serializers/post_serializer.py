@@ -30,6 +30,7 @@ class PostSerializer(serializers.ModelSerializer):
             "image",
             "is_retweet",
             "retweet_of",
+            "in_reply_to",
             "stats",
             "is_retweeted",
             "created_at",
@@ -70,15 +71,29 @@ class PostCreateSerializer(serializers.ModelSerializer):
     Serializer para criação de posts.
     """
 
+    # Campo opcional para reply
+    in_reply_to = serializers.PrimaryKeyRelatedField(
+        queryset=Post.objects.all(),
+        required=False,
+        allow_null=True
+    )
+
     class Meta:
         model = Post
         fields = [
             "content",
             "image",
+            "in_reply_to",
         ]
 
     def validate_content(self, value):
         """Valida se o conteúdo não está vazio."""
         if not value.strip():
             raise serializers.ValidationError("O conteúdo não pode estar vazio.")
+        return value
+    
+    def validate_in_reply_to(self, value):
+        """Valida que o post pai existe."""
+        if value and not Post.objects.filter(id=value.id).exists():
+            raise serializers.ValidationError("Post pai não existe.")
         return value
