@@ -73,9 +73,7 @@ class PostCreateSerializer(serializers.ModelSerializer):
 
     # Campo opcional para reply
     in_reply_to = serializers.PrimaryKeyRelatedField(
-        queryset=Post.objects.all(),
-        required=False,
-        allow_null=True
+        queryset=Post.objects.all(), required=False, allow_null=True
     )
 
     class Meta:
@@ -91,7 +89,7 @@ class PostCreateSerializer(serializers.ModelSerializer):
         if not value.strip():
             raise serializers.ValidationError("O conteúdo não pode estar vazio.")
         return value
-    
+
     def validate_in_reply_to(self, value):
         """Valida que o post pai existe."""
         if value and not Post.objects.filter(id=value.id).exists():

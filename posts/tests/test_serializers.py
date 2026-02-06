@@ -167,12 +167,10 @@ class TestPostSerializer:
         """Testa serialização de reply."""
         author = User.objects.create_user(username="author", password="pass123")
         replier = User.objects.create_user(username="replier", password="pass123")
-        
+
         original = Post.objects.create(author=author, content="Original")
         reply = Post.objects.create(
-            author=replier,
-            content="This is a reply",
-            in_reply_to=original
+            author=replier, content="This is a reply", in_reply_to=original
         )
 
         serializer = PostSerializer(reply)
@@ -225,11 +223,8 @@ class TestPostCreateSerializer:
         """Testa criação de reply com in_reply_to válido."""
         author = User.objects.create_user(username="author", password="pass123")
         original = Post.objects.create(author=author, content="Original")
-        
-        data = {
-            "content": "This is a reply",
-            "in_reply_to": original.id
-        }
+
+        data = {"content": "This is a reply", "in_reply_to": original.id}
 
         serializer = PostCreateSerializer(data=data)
         assert serializer.is_valid()
@@ -238,7 +233,7 @@ class TestPostCreateSerializer:
         """Testa que in_reply_to com post inexistente retorna erro."""
         data = {
             "content": "Reply to nothing",
-            "in_reply_to": 99999  # Post que não existe
+            "in_reply_to": 99999,  # Post que não existe
         }
 
         serializer = PostCreateSerializer(data=data)
@@ -251,7 +246,10 @@ class TestPostCreateSerializer:
 
         serializer = PostCreateSerializer(data=data)
         assert serializer.is_valid()
-        assert "in_reply_to" not in serializer.validated_data or serializer.validated_data.get("in_reply_to") is None
+        assert (
+            "in_reply_to" not in serializer.validated_data
+            or serializer.validated_data.get("in_reply_to") is None
+        )
 
 
 @pytest.mark.django_db
