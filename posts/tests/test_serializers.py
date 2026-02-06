@@ -71,7 +71,7 @@ class TestPostSerializer:
         assert data["stats"]["likes"] == 2
         assert data["stats"]["comments"] == 3
 
-    # ✨ TESTES - Retweets
+    # TESTES - Retweets
     def test_serialize_retweet(self):
         """Testa serialização de retweet."""
         author = User.objects.create_user(username="author", password="pass123")
@@ -162,6 +162,34 @@ class TestPostSerializer:
 
         assert data["stats"]["retweets"] == 5
 
+    # TESTES - Replies
+    def test_serialize_reply(self):
+        """Testa serialização de reply."""
+        author = User.objects.create_user(username="author", password="pass123")
+        replier = User.objects.create_user(username="replier", password="pass123")
+
+        original = Post.objects.create(author=author, content="Original")
+        reply = Post.objects.create(
+            author=replier, content="This is a reply", in_reply_to=original
+        )
+
+        serializer = PostSerializer(reply)
+        data = serializer.data
+
+        assert data["in_reply_to"] == original.id
+        assert data["content"] == "This is a reply"
+        assert data["author"]["username"] == "replier"
+
+    def test_serialize_post_without_reply(self):
+        """Testa que in_reply_to é None para posts normais."""
+        author = User.objects.create_user(username="author", password="pass123")
+        post = Post.objects.create(author=author, content="Normal post")
+
+        serializer = PostSerializer(post)
+        data = serializer.data
+
+        assert data["in_reply_to"] is None
+
 
 @pytest.mark.django_db
 class TestPostCreateSerializer:
@@ -189,6 +217,39 @@ class TestPostCreateSerializer:
         serializer = PostCreateSerializer(data=data)
         assert not serializer.is_valid()
         assert "content" in serializer.errors
+
+    # TESTES - Replies no create
+    def test_create_reply_valid(self):
+        """Testa criação de reply com in_reply_to válido."""
+        author = User.objects.create_user(username="author", password="pass123")
+        original = Post.objects.create(author=author, content="Original")
+
+        data = {"content": "This is a reply", "in_reply_to": original.id}
+
+        serializer = PostCreateSerializer(data=data)
+        assert serializer.is_valid()
+
+    def test_create_reply_invalid_post(self):
+        """Testa que in_reply_to com post inexistente retorna erro."""
+        data = {
+            "content": "Reply to nothing",
+            "in_reply_to": 99999,  # Post que não existe
+        }
+
+        serializer = PostCreateSerializer(data=data)
+        assert not serializer.is_valid()
+        assert "in_reply_to" in serializer.errors
+
+    def test_create_post_without_reply(self):
+        """Testa que in_reply_to é opcional."""
+        data = {"content": "Normal post"}
+
+        serializer = PostCreateSerializer(data=data)
+        assert serializer.is_valid()
+        assert (
+            "in_reply_to" not in serializer.validated_data
+            or serializer.validated_data.get("in_reply_to") is None
+        )
 
 
 @pytest.mark.django_db

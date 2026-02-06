@@ -90,6 +90,60 @@ class TestPostModel:
 
         assert post.retweets_count == 0
 
+    # TESTES - Replies
+    def test_create_reply(self):
+        """Testa criação de reply."""
+        author = User.objects.create_user(username="author", password="pass123")
+        replier = User.objects.create_user(username="replier", password="pass123")
+
+        original_post = Post.objects.create(author=author, content="Original post")
+        reply = Post.objects.create(
+            author=replier, content="This is a reply", in_reply_to=original_post
+        )
+
+        assert reply.in_reply_to == original_post
+        assert reply.author == replier
+        assert reply.content == "This is a reply"
+
+    def test_reply_to_reply(self):
+        """Testa criar reply de um reply (thread)."""
+        user1 = User.objects.create_user(username="user1", password="pass123")
+        user2 = User.objects.create_user(username="user2", password="pass123")
+        user3 = User.objects.create_user(username="user3", password="pass123")
+
+        post_a = Post.objects.create(author=user1, content="Post A")
+        post_b = Post.objects.create(
+            author=user2, content="Reply to A", in_reply_to=post_a
+        )
+        post_c = Post.objects.create(
+            author=user3, content="Reply to B", in_reply_to=post_b
+        )
+
+        assert post_c.in_reply_to == post_b
+        assert post_b.in_reply_to == post_a
+        assert post_a.in_reply_to is None
+
+    def test_get_replies(self):
+        """Testa buscar replies de um post."""
+        author = User.objects.create_user(username="author", password="pass123")
+        replier1 = User.objects.create_user(username="replier1", password="pass123")
+        replier2 = User.objects.create_user(username="replier2", password="pass123")
+
+        original = Post.objects.create(author=author, content="Original")
+
+        reply1 = Post.objects.create(
+            author=replier1, content="Reply 1", in_reply_to=original
+        )
+        reply2 = Post.objects.create(
+            author=replier2, content="Reply 2", in_reply_to=original
+        )
+
+        replies = Post.objects.filter(in_reply_to=original)
+
+        assert replies.count() == 2
+        assert reply1 in replies
+        assert reply2 in replies
+
     def test_post_likes_count(self):
         """Testa contagem de curtidas."""
         user = User.objects.create_user(username="author", password="pass123")

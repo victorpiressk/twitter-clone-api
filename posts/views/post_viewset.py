@@ -26,6 +26,8 @@ class PostViewSet(viewsets.ModelViewSet):
     retweet: Retweeta um post
     quote_retweet: Retweeta com comentário
     unretweet: Desfaz retweet
+    replies: Lista respostas de um post
+    thread: Retorna thread completa (post + ancestrais)
     """
 
     queryset = Post.objects.all().select_related("author")
@@ -39,8 +41,19 @@ class PostViewSet(viewsets.ModelViewSet):
         return PostSerializer
 
     def perform_create(self, serializer):
-        """Define o autor como o usuário autenticado."""
-        serializer.save(author=self.request.user)
+        """
+        Define o autor como o usuário autenticado.
+        Se in_reply_to for fornecido, incrementa comments_count do post pai.
+        """
+        in_reply_to = serializer.validated_data.get("in_reply_to")
+
+        # Salvar o post
+        post = serializer.save(author=self.request.user)
+
+        # Se é uma resposta, incrementar contador do post pai
+        if in_reply_to:
+            in_reply_to.refresh_from_db()
+            Post.objects.filter(in_reply_to=post).count()
 
     @action(detail=False, methods=["get"])
     def feed(self, request):
@@ -58,7 +71,7 @@ class PostViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(posts, many=True)
         return Response(serializer.data)
 
-    # ✨ NOVAS ACTIONS - RETWEETS
+    # RETWEETS
 
     @action(detail=True, methods=["post"], permission_classes=[IsAuthenticated])
     def retweet(self, request, pk=None):
@@ -160,3 +173,40 @@ class PostViewSet(viewsets.ModelViewSet):
                 original_post.save(update_fields=["retweets_count"])
 
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+    # ACTIONS - REPLIES
+
+    @action(detail=True, methods=["get"])
+    def replies(self, request, pk=None):
+        """
+        Lista todas as respostas (replies) de um post.
+        """
+        post = self.get_object()
+
+        # Buscar posts que são respostas deste post
+        replies = (
+            Post.objects.filter(in_reply_to=post)
+            .select_related("author")
+            .order_by("created_at")
+        )
+
+        serializer = self.get_serializer(replies, many=True)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=["get"])
+    def thread(self, request, pk=None):
+        """
+        Retorna a thread completa (post + todos os ancestrais).
+        Útil para ver a conversa inteira.
+        """
+        post = self.get_object()
+        thread_posts = []
+
+        # Percorrer para trás pegando posts pais
+        current_post = post
+        while current_post:
+            thread_posts.insert(0, current_post)  # Adiciona no início
+            current_post = current_post.in_reply_to
+
+        serializer = self.get_serializer(thread_posts, many=True)
+        return Response(serializer.data)
