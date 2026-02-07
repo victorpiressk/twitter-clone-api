@@ -2,12 +2,12 @@
 Post ViewSet.
 """
 
-from django.db import transaction
-
-from rest_framework import status, viewsets
+from rest_framework import viewsets, status
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
+from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
+from django.db import transaction
 
 from posts.models import Post
 from posts.permissions import IsAuthorOrReadOnly
@@ -27,12 +27,13 @@ class PostViewSet(viewsets.ModelViewSet):
     quote_retweet: Retweeta com comentário
     unretweet: Desfaz retweet
     replies: Lista respostas de um post
-    thread: Retorna thread completa (post + ancestrais)
+    thread: Retorna thread completa
     """
 
-    queryset = Post.objects.all().select_related("author")
+    queryset = Post.objects.all().select_related("author").prefetch_related("media")
     serializer_class = PostSerializer
     permission_classes = [IsAuthenticatedOrReadOnly, IsAuthorOrReadOnly]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def get_serializer_class(self):
         """Retorna serializer apropriado para cada ação."""
@@ -45,11 +46,11 @@ class PostViewSet(viewsets.ModelViewSet):
         Define o autor como o usuário autenticado.
         Se in_reply_to for fornecido, incrementa comments_count do post pai.
         """
-        in_reply_to = serializer.validated_data.get("in_reply_to")
-
+        in_reply_to = serializer.validated_data.get('in_reply_to')
+        
         # Salvar o post
         post = serializer.save(author=self.request.user)
-
+        
         # Se é uma resposta, incrementar contador do post pai
         if in_reply_to:
             in_reply_to.refresh_from_db()
@@ -66,7 +67,7 @@ class PostViewSet(viewsets.ModelViewSet):
         # Posts dos usuários seguidos + posts do próprio usuário
         posts = Post.objects.filter(
             author_id__in=list(following_ids) + [request.user.id]
-        ).select_related("author")
+        ).select_related("author").prefetch_related("media")
 
         serializer = self.get_serializer(posts, many=True)
         return Response(serializer.data)
@@ -82,22 +83,24 @@ class PostViewSet(viewsets.ModelViewSet):
 
         # Verificar se já retweetou
         already_retweeted = Post.objects.filter(
-            author=request.user, is_retweet=True, retweet_of=original_post
+            author=request.user,
+            is_retweet=True,
+            retweet_of=original_post
         ).exists()
 
         if already_retweeted:
             return Response(
                 {"detail": "Você já retweetou este post."},
-                status=status.HTTP_400_BAD_REQUEST,
+                status=status.HTTP_400_BAD_REQUEST
             )
 
         # Criar retweet e incrementar contador atomicamente
         with transaction.atomic():
             retweet = Post.objects.create(
                 author=request.user,
-                content="",  # Retweet simples não tem conteúdo
+                content="",
                 is_retweet=True,
-                retweet_of=original_post,
+                retweet_of=original_post
             )
 
             # Incrementar contador do post original
@@ -119,14 +122,14 @@ class PostViewSet(viewsets.ModelViewSet):
         if not comment:
             return Response(
                 {"detail": "Quote retweet deve conter um comentário."},
-                status=status.HTTP_400_BAD_REQUEST,
+                status=status.HTTP_400_BAD_REQUEST
             )
 
         # Validar tamanho do comentário
         if len(comment) > 280:
             return Response(
                 {"detail": "Comentário não pode exceder 280 caracteres."},
-                status=status.HTTP_400_BAD_REQUEST,
+                status=status.HTTP_400_BAD_REQUEST
             )
 
         # Criar quote retweet e incrementar contador atomicamente
@@ -135,7 +138,7 @@ class PostViewSet(viewsets.ModelViewSet):
                 author=request.user,
                 content=comment,
                 is_retweet=True,
-                retweet_of=original_post,
+                retweet_of=original_post
             )
 
             # Incrementar contador do post original
@@ -155,12 +158,14 @@ class PostViewSet(viewsets.ModelViewSet):
         # Buscar retweet do usuário
         try:
             retweet = Post.objects.get(
-                author=request.user, is_retweet=True, retweet_of=original_post
+                author=request.user,
+                is_retweet=True,
+                retweet_of=original_post
             )
         except Post.DoesNotExist:
             return Response(
                 {"detail": "Você não retweetou este post."},
-                status=status.HTTP_400_BAD_REQUEST,
+                status=status.HTTP_400_BAD_REQUEST
             )
 
         # Deletar retweet e decrementar contador atomicamente
@@ -174,7 +179,7 @@ class PostViewSet(viewsets.ModelViewSet):
 
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    # ACTIONS - REPLIES
+    # REPLIES
 
     @action(detail=True, methods=["get"])
     def replies(self, request, pk=None):
@@ -182,13 +187,11 @@ class PostViewSet(viewsets.ModelViewSet):
         Lista todas as respostas (replies) de um post.
         """
         post = self.get_object()
-
+        
         # Buscar posts que são respostas deste post
-        replies = (
-            Post.objects.filter(in_reply_to=post)
-            .select_related("author")
-            .order_by("created_at")
-        )
+        replies = Post.objects.filter(
+            in_reply_to=post
+        ).select_related("author").prefetch_related("media").order_by("created_at")
 
         serializer = self.get_serializer(replies, many=True)
         return Response(serializer.data)
@@ -205,7 +208,7 @@ class PostViewSet(viewsets.ModelViewSet):
         # Percorrer para trás pegando posts pais
         current_post = post
         while current_post:
-            thread_posts.insert(0, current_post)  # Adiciona no início
+            thread_posts.insert(0, current_post)
             current_post = current_post.in_reply_to
 
         serializer = self.get_serializer(thread_posts, many=True)
