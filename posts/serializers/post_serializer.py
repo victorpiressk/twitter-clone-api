@@ -4,8 +4,37 @@ Post serializers.
 
 from rest_framework import serializers
 
-from posts.models import Post
+from posts.models import Post, PostMedia
 from users.serializers import UserSerializer
+
+
+# ✨ NOVO SERIALIZER - PostMedia
+class PostMediaSerializer(serializers.ModelSerializer):
+    """
+    Serializer para mídias de posts.
+    """
+
+    url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = PostMedia
+        fields = [
+            "id",
+            "type",
+            "url",
+            "thumbnail",
+            "order",
+        ]
+        read_only_fields = ["id", "url", "thumbnail"]
+
+    def get_url(self, obj):
+        """Retorna URL completa do arquivo."""
+        request = self.context.get("request")
+        if obj.file and hasattr(obj.file, "url"):
+            if request:
+                return request.build_absolute_uri(obj.file.url)
+            return obj.file.url
+        return None
 
 
 class PostSerializer(serializers.ModelSerializer):
@@ -14,10 +43,13 @@ class PostSerializer(serializers.ModelSerializer):
     """
 
     author = UserSerializer(read_only=True)
-
+    
+    # Múltiplas mídias
+    media = PostMediaSerializer(many=True, read_only=True)
+    
     # Stats como objeto aninhado
     stats = serializers.SerializerMethodField()
-
+    
     # Estado de interação do usuário
     is_retweeted = serializers.SerializerMethodField()
 
@@ -27,7 +59,8 @@ class PostSerializer(serializers.ModelSerializer):
             "id",
             "author",
             "content",
-            "image",
+            "image", # Mantido por compatibilidade
+            "media",
             "is_retweet",
             "retweet_of",
             "in_reply_to",
@@ -41,6 +74,7 @@ class PostSerializer(serializers.ModelSerializer):
             "author",
             "is_retweet",
             "retweets_count",
+            "media",
             "stats",
             "is_retweeted",
             "created_at",
@@ -61,7 +95,9 @@ class PostSerializer(serializers.ModelSerializer):
         request = self.context.get("request")
         if request and request.user.is_authenticated:
             return Post.objects.filter(
-                author=request.user, is_retweet=True, retweet_of=obj
+                author=request.user,
+                is_retweet=True,
+                retweet_of=obj
             ).exists()
         return False
 
@@ -73,15 +109,27 @@ class PostCreateSerializer(serializers.ModelSerializer):
 
     # Campo opcional para reply
     in_reply_to = serializers.PrimaryKeyRelatedField(
-        queryset=Post.objects.all(), required=False, allow_null=True
+        queryset=Post.objects.all(),
+        required=False,
+        allow_null=True
+    )
+
+    # Upload de múltiplas mídias
+    media_files = serializers.ListField(
+        child=serializers.FileField(),
+        required=False,
+        write_only=True,
+        max_length=4,  # Máximo 4 mídias
+        help_text="Lista de arquivos de mídia (máximo 4)"
     )
 
     class Meta:
         model = Post
         fields = [
             "content",
-            "image",
+            "image",  # Mantido por compatibilidade
             "in_reply_to",
+            "media_files",
         ]
 
     def validate_content(self, value):
@@ -95,3 +143,70 @@ class PostCreateSerializer(serializers.ModelSerializer):
         if value and not Post.objects.filter(id=value.id).exists():
             raise serializers.ValidationError("Post pai não existe.")
         return value
+
+    def validate_media_files(self, value):
+        """Valida arquivos de mídia."""
+        if not value:
+            return value
+
+        # Máximo 4 arquivos
+        if len(value) > 4:
+            raise serializers.ValidationError(
+                "Você pode enviar no máximo 4 arquivos de mídia."
+            )
+
+        # Validar tamanho de cada arquivo
+        max_size_image = 5 * 1024 * 1024  # 5MB
+        max_size_video = 50 * 1024 * 1024  # 50MB
+
+        for file in value:
+            # Verificar tipo de arquivo
+            content_type = file.content_type
+            
+            if content_type.startswith('image/'):
+                if file.size > max_size_image:
+                    raise serializers.ValidationError(
+                        f"Imagem muito grande. Tamanho máximo: 5MB"
+                    )
+            elif content_type.startswith('video/'):
+                if file.size > max_size_video:
+                    raise serializers.ValidationError(
+                        f"Vídeo muito grande. Tamanho máximo: 50MB"
+                    )
+            else:
+                raise serializers.ValidationError(
+                    f"Tipo de arquivo não suportado: {content_type}"
+                )
+
+        return value
+
+    def create(self, validated_data):
+        """Cria post e mídias associadas."""
+        media_files = validated_data.pop('media_files', [])
+        
+        # Criar post
+        post = super().create(validated_data)
+        
+        # Criar mídias se fornecidas
+        if media_files:
+            for index, file in enumerate(media_files):
+                # Determinar tipo de mídia
+                content_type = file.content_type
+                if content_type.startswith('image/gif'):
+                    media_type = 'gif'
+                elif content_type.startswith('image/'):
+                    media_type = 'image'
+                elif content_type.startswith('video/'):
+                    media_type = 'video'
+                else:
+                    media_type = 'image'  # fallback
+                
+                PostMedia.objects.create(
+                    post=post,
+                    type=media_type,
+                    file=file,
+                    order=index
+                )
+        
+        return post
+    
