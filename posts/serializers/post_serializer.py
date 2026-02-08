@@ -43,13 +43,13 @@ class PostSerializer(serializers.ModelSerializer):
     """
 
     author = UserSerializer(read_only=True)
-    
+
     # Múltiplas mídias
     media = PostMediaSerializer(many=True, read_only=True)
-    
+
     # Stats como objeto aninhado
     stats = serializers.SerializerMethodField()
-    
+
     # Estado de interação do usuário
     is_retweeted = serializers.SerializerMethodField()
 
@@ -59,7 +59,7 @@ class PostSerializer(serializers.ModelSerializer):
             "id",
             "author",
             "content",
-            "image", # Mantido por compatibilidade
+            "image",  # Mantido por compatibilidade
             "media",
             "is_retweet",
             "retweet_of",
@@ -95,9 +95,7 @@ class PostSerializer(serializers.ModelSerializer):
         request = self.context.get("request")
         if request and request.user.is_authenticated:
             return Post.objects.filter(
-                author=request.user,
-                is_retweet=True,
-                retweet_of=obj
+                author=request.user, is_retweet=True, retweet_of=obj
             ).exists()
         return False
 
@@ -109,9 +107,7 @@ class PostCreateSerializer(serializers.ModelSerializer):
 
     # Campo opcional para reply
     in_reply_to = serializers.PrimaryKeyRelatedField(
-        queryset=Post.objects.all(),
-        required=False,
-        allow_null=True
+        queryset=Post.objects.all(), required=False, allow_null=True
     )
 
     # Upload de múltiplas mídias
@@ -120,7 +116,7 @@ class PostCreateSerializer(serializers.ModelSerializer):
         required=False,
         write_only=True,
         max_length=4,  # Máximo 4 mídias
-        help_text="Lista de arquivos de mídia (máximo 4)"
+        help_text="Lista de arquivos de mídia (máximo 4)",
     )
 
     class Meta:
@@ -162,16 +158,16 @@ class PostCreateSerializer(serializers.ModelSerializer):
         for file in value:
             # Verificar tipo de arquivo
             content_type = file.content_type
-            
-            if content_type.startswith('image/'):
+
+            if content_type.startswith("image/"):
                 if file.size > max_size_image:
                     raise serializers.ValidationError(
-                        f"Imagem muito grande. Tamanho máximo: 5MB"
+                        "Imagem muito grande. Tamanho máximo: 5MB"
                     )
-            elif content_type.startswith('video/'):
+            elif content_type.startswith("video/"):
                 if file.size > max_size_video:
                     raise serializers.ValidationError(
-                        f"Vídeo muito grande. Tamanho máximo: 50MB"
+                        "Vídeo muito grande. Tamanho máximo: 50MB"
                     )
             else:
                 raise serializers.ValidationError(
@@ -182,31 +178,27 @@ class PostCreateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         """Cria post e mídias associadas."""
-        media_files = validated_data.pop('media_files', [])
-        
+        media_files = validated_data.pop("media_files", [])
+
         # Criar post
         post = super().create(validated_data)
-        
+
         # Criar mídias se fornecidas
         if media_files:
             for index, file in enumerate(media_files):
                 # Determinar tipo de mídia
                 content_type = file.content_type
-                if content_type.startswith('image/gif'):
-                    media_type = 'gif'
-                elif content_type.startswith('image/'):
-                    media_type = 'image'
-                elif content_type.startswith('video/'):
-                    media_type = 'video'
+                if content_type.startswith("image/gif"):
+                    media_type = "gif"
+                elif content_type.startswith("image/"):
+                    media_type = "image"
+                elif content_type.startswith("video/"):
+                    media_type = "video"
                 else:
-                    media_type = 'image'  # fallback
-                
+                    media_type = "image"  # fallback
+
                 PostMedia.objects.create(
-                    post=post,
-                    type=media_type,
-                    file=file,
-                    order=index
+                    post=post, type=media_type, file=file, order=index
                 )
-        
+
         return post
-    

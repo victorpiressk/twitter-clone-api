@@ -53,10 +53,7 @@ class PostMedia(models.Model):
         help_text="Ordem de exibição da mídia no post",
     )
 
-    created_at = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name="Criado em"
-    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Criado em")
 
     class Meta:
         verbose_name = "Mídia do Post"
@@ -68,4 +65,3 @@ class PostMedia(models.Model):
 
     def __str__(self):
         return f"{self.get_type_display()} - {self.post.id} (ordem: {self.order})"
-    
