@@ -192,6 +192,85 @@ class TestPostSerializer:
 
 
 @pytest.mark.django_db
+class TestPostMediaSerializer:
+    """Testes para PostMediaSerializer - MÚLTIPLAS MÍDIAS."""
+
+    def test_serialize_post_with_media(self):
+        """Testa serialização de post com mídias."""
+        from io import BytesIO
+
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        from PIL import Image
+
+        from posts.models import PostMedia
+
+        user = User.objects.create_user(username="testuser", password="pass123")
+        post = Post.objects.create(author=user, content="Post with media")
+
+        def create_test_image(name):
+            file = BytesIO()
+            image = Image.new("RGB", (100, 100), color="red")
+            image.save(file, "JPEG")
+            file.seek(0)
+            return SimpleUploadedFile(
+                name=name, content=file.read(), content_type="image/jpeg"
+            )
+
+        PostMedia.objects.create(
+            post=post, type="image", file=create_test_image("img1.jpg"), order=0
+        )
+        PostMedia.objects.create(
+            post=post, type="image", file=create_test_image("img2.jpg"), order=1
+        )
+
+        serializer = PostSerializer(post)
+        data = serializer.data
+
+        assert "media" in data
+        assert len(data["media"]) == 2
+        assert data["media"][0]["type"] == "image"
+        assert data["media"][0]["order"] == 0
+        assert "url" in data["media"][0]
+
+    def test_media_url_generation(self):
+        """Testa geração de URL da mídia."""
+        from io import BytesIO
+
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        from PIL import Image
+
+        from posts.models import PostMedia
+        from posts.serializers import PostMediaSerializer
+
+        user = User.objects.create_user(username="testuser", password="pass123")
+        post = Post.objects.create(author=user, content="Test")
+
+        file = BytesIO()
+        image = Image.new("RGB", (100, 100), color="red")
+        image.save(file, "JPEG")
+        file.seek(0)
+        test_image = SimpleUploadedFile(
+            name="test.jpg", content=file.read(), content_type="image/jpeg"
+        )
+
+        media = PostMedia.objects.create(
+            post=post, type="image", file=test_image, order=0
+        )
+
+        # Criar request mock para context
+        factory = APIRequestFactory()
+        request = factory.get("/")
+
+        serializer = PostMediaSerializer(media, context={"request": request})
+        data = serializer.data
+
+        assert "url" in data
+        assert data["url"] is not None
+
+
+@pytest.mark.django_db
 class TestPostCreateSerializer:
     """Testes para o PostCreateSerializer."""
 
@@ -250,6 +329,83 @@ class TestPostCreateSerializer:
             "in_reply_to" not in serializer.validated_data
             or serializer.validated_data.get("in_reply_to") is None
         )
+
+    # TESTES - Múltiplas Mídias (Validações)
+    def test_validate_media_files_max_4(self):
+        """Testa validação de máximo 4 mídias."""
+        from io import BytesIO
+
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        from PIL import Image
+
+        def create_test_image(name):
+            file = BytesIO()
+            image = Image.new("RGB", (100, 100), color="red")
+            image.save(file, "JPEG")
+            file.seek(0)
+            return SimpleUploadedFile(
+                name=name, content=file.read(), content_type="image/jpeg"
+            )
+
+        # 5 imagens (excede limite)
+        media_files = [create_test_image(f"img{i}.jpg") for i in range(5)]
+
+        data = {"content": "Post with too many images", "media_files": media_files}
+
+        serializer = PostCreateSerializer(data=data)
+        assert not serializer.is_valid()
+        assert "media_files" in serializer.errors
+        assert "4" in str(serializer.errors["media_files"][0])
+
+    def test_validate_image_size(self):
+        """Testa validação de tamanho de imagem (máx 5MB)."""
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        # Imagem de 6MB (excede limite)
+        large_content = b"0" * (6 * 1024 * 1024)
+        large_image = SimpleUploadedFile(
+            name="large.jpg", content=large_content, content_type="image/jpeg"
+        )
+
+        data = {"content": "Post with large image", "media_files": [large_image]}
+
+        serializer = PostCreateSerializer(data=data)
+        assert not serializer.is_valid()
+        assert "media_files" in serializer.errors
+        assert "5MB" in str(serializer.errors["media_files"][0])
+
+    def test_validate_video_size(self):
+        """Testa validação de tamanho de vídeo (máx 50MB)."""
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        # Vídeo de 60MB (excede limite)
+        large_content = b"0" * (60 * 1024 * 1024)
+        large_video = SimpleUploadedFile(
+            name="large.mp4", content=large_content, content_type="video/mp4"
+        )
+
+        data = {"content": "Post with large video", "media_files": [large_video]}
+
+        serializer = PostCreateSerializer(data=data)
+        assert not serializer.is_valid()
+        assert "media_files" in serializer.errors
+        assert "50MB" in str(serializer.errors["media_files"][0])
+
+    def test_validate_unsupported_file_type(self):
+        """Testa validação de tipo de arquivo não suportado."""
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        txt_file = SimpleUploadedFile(
+            name="document.txt", content=b"Hello world", content_type="text/plain"
+        )
+
+        data = {"content": "Post with txt file", "media_files": [txt_file]}
+
+        serializer = PostCreateSerializer(data=data)
+        assert not serializer.is_valid()
+        assert "media_files" in serializer.errors
+        assert "suportado" in str(serializer.errors["media_files"][0]).lower()
 
 
 @pytest.mark.django_db

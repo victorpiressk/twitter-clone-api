@@ -6,6 +6,7 @@ from django.db import transaction
 
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
+from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 
@@ -27,12 +28,13 @@ class PostViewSet(viewsets.ModelViewSet):
     quote_retweet: Retweeta com comentário
     unretweet: Desfaz retweet
     replies: Lista respostas de um post
-    thread: Retorna thread completa (post + ancestrais)
+    thread: Retorna thread completa
     """
 
-    queryset = Post.objects.all().select_related("author")
+    queryset = Post.objects.all().select_related("author").prefetch_related("media")
     serializer_class = PostSerializer
     permission_classes = [IsAuthenticatedOrReadOnly, IsAuthorOrReadOnly]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def get_serializer_class(self):
         """Retorna serializer apropriado para cada ação."""
@@ -55,6 +57,27 @@ class PostViewSet(viewsets.ModelViewSet):
             in_reply_to.refresh_from_db()
             Post.objects.filter(in_reply_to=post).count()
 
+    # NOVO MÉTODO - CORREÇÃO
+    def create(self, request, *args, **kwargs):
+        """
+        Sobrescreve create para retornar PostSerializer na resposta.
+
+        Isso garante que a resposta contenha todos os campos (id, author, media, etc)
+        em vez de apenas os campos de input do PostCreateSerializer.
+        """
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+
+        # Usar PostSerializer para retornar resposta completa
+        instance = serializer.instance
+        output_serializer = PostSerializer(instance, context={"request": request})
+        headers = self.get_success_headers(output_serializer.data)
+
+        return Response(
+            output_serializer.data, status=status.HTTP_201_CREATED, headers=headers
+        )
+
     @action(detail=False, methods=["get"])
     def feed(self, request):
         """
@@ -64,9 +87,11 @@ class PostViewSet(viewsets.ModelViewSet):
         following_ids = request.user.following.values_list("following_id", flat=True)
 
         # Posts dos usuários seguidos + posts do próprio usuário
-        posts = Post.objects.filter(
-            author_id__in=list(following_ids) + [request.user.id]
-        ).select_related("author")
+        posts = (
+            Post.objects.filter(author_id__in=list(following_ids) + [request.user.id])
+            .select_related("author")
+            .prefetch_related("media")
+        )
 
         serializer = self.get_serializer(posts, many=True)
         return Response(serializer.data)
@@ -95,7 +120,7 @@ class PostViewSet(viewsets.ModelViewSet):
         with transaction.atomic():
             retweet = Post.objects.create(
                 author=request.user,
-                content="",  # Retweet simples não tem conteúdo
+                content="",
                 is_retweet=True,
                 retweet_of=original_post,
             )
@@ -174,7 +199,7 @@ class PostViewSet(viewsets.ModelViewSet):
 
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    # ACTIONS - REPLIES
+    # REPLIES
 
     @action(detail=True, methods=["get"])
     def replies(self, request, pk=None):
@@ -187,6 +212,7 @@ class PostViewSet(viewsets.ModelViewSet):
         replies = (
             Post.objects.filter(in_reply_to=post)
             .select_related("author")
+            .prefetch_related("media")
             .order_by("created_at")
         )
 
@@ -205,7 +231,7 @@ class PostViewSet(viewsets.ModelViewSet):
         # Percorrer para trás pegando posts pais
         current_post = post
         while current_post:
-            thread_posts.insert(0, current_post)  # Adiciona no início
+            thread_posts.insert(0, current_post)
             current_post = current_post.in_reply_to
 
         serializer = self.get_serializer(thread_posts, many=True)
