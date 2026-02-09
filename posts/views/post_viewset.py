@@ -12,7 +12,7 @@ from rest_framework.response import Response
 
 from posts.models import Post
 from posts.permissions import IsAuthorOrReadOnly
-from posts.serializers import PostCreateSerializer, PostSerializer
+from posts.serializers import PollCreateSerializer, PostCreateSerializer, PostSerializer
 
 
 class PostViewSet(viewsets.ModelViewSet):
@@ -57,14 +57,20 @@ class PostViewSet(viewsets.ModelViewSet):
             in_reply_to.refresh_from_db()
             Post.objects.filter(in_reply_to=post).count()
 
-    # NOVO MÉTODO - CORREÇÃO
     def create(self, request, *args, **kwargs):
         """
         Sobrescreve create para retornar PostSerializer na resposta.
 
         Isso garante que a resposta contenha todos os campos (id, author, media, etc)
         em vez de apenas os campos de input do PostCreateSerializer.
+
+        Suporta criação de posts com enquetes.
         """
+        # Se tem poll no body, usar método específico
+        if "poll" in request.data:
+            return self.create_with_poll(request, *args, **kwargs)
+
+        # Lógica normal (já existente)
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
@@ -72,6 +78,47 @@ class PostViewSet(viewsets.ModelViewSet):
         # Usar PostSerializer para retornar resposta completa
         instance = serializer.instance
         output_serializer = PostSerializer(instance, context={"request": request})
+        headers = self.get_success_headers(output_serializer.data)
+
+        return Response(
+            output_serializer.data, status=status.HTTP_201_CREATED, headers=headers
+        )
+
+    def create_with_poll(self, request, *args, **kwargs):
+        """
+        Criar post com enquete.
+
+        Body:
+        {
+            "content": "Qual sua linguagem favorita?",
+            "poll": {
+                "question": "",  // opcional
+                "duration_hours": 24,
+                "options": ["Python", "JavaScript", "Go", "Rust"]
+            }
+        }
+        """
+
+        # Validar e criar post
+        post_data = request.data.copy()
+        poll_data = post_data.pop("poll", None)
+
+        serializer = self.get_serializer(data=post_data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+
+        post = serializer.instance
+
+        # Criar enquete se fornecida
+        if poll_data:
+            poll_serializer = PollCreateSerializer(
+                data=poll_data, context={"post": post}
+            )
+            poll_serializer.is_valid(raise_exception=True)
+            poll_serializer.save(post=post)
+
+        # Retornar post completo com enquete
+        output_serializer = PostSerializer(post, context={"request": request})
         headers = self.get_success_headers(output_serializer.data)
 
         return Response(
