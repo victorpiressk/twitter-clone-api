@@ -5,10 +5,11 @@ Post serializers.
 from rest_framework import serializers
 
 from posts.models import Post, PostMedia
+from posts.serializers import PollSerializer
 from users.serializers import UserSerializer
 
 
-# ✨ NOVO SERIALIZER - PostMedia
+# NOVO SERIALIZER - PostMedia
 class PostMediaSerializer(serializers.ModelSerializer):
     """
     Serializer para mídias de posts.
@@ -47,6 +48,9 @@ class PostSerializer(serializers.ModelSerializer):
     # Múltiplas mídias
     media = PostMediaSerializer(many=True, read_only=True)
 
+    # Enquete (se existir)
+    poll = PollSerializer(read_only=True)
+
     # Stats como objeto aninhado
     stats = serializers.SerializerMethodField()
 
@@ -61,6 +65,7 @@ class PostSerializer(serializers.ModelSerializer):
             "content",
             "image",  # Mantido por compatibilidade
             "media",
+            "poll",
             "is_retweet",
             "retweet_of",
             "in_reply_to",
@@ -75,6 +80,7 @@ class PostSerializer(serializers.ModelSerializer):
             "is_retweet",
             "retweets_count",
             "media",
+            "poll",
             "stats",
             "is_retweeted",
             "created_at",
