@@ -12,6 +12,7 @@ from .poll_serializer import (
     PollVoteSerializer,
 )
 from .post_serializer import PostCreateSerializer, PostMediaSerializer, PostSerializer
+from .location_serializer import LocationSerializer, LocationCreateSerializer
 
 __all__ = [
     "PostSerializer",
@@ -24,4 +25,6 @@ __all__ = [
     "PollCreateSerializer",
     "PollVoteSerializer",
     "PollResultsSerializer",
+    "LocationSerializer",
+    "LocationCreateSerializer",
 ]

@@ -5,7 +5,7 @@ Post serializers.
 from rest_framework import serializers
 
 from posts.models import Post, PostMedia
-from posts.serializers import PollSerializer
+from posts.serializers import PollSerializer, LocationSerializer, LocationCreateSerializer
 from users.serializers import UserSerializer
 
 
@@ -57,6 +57,8 @@ class PostSerializer(serializers.ModelSerializer):
     # Estado de interação do usuário
     is_retweeted = serializers.SerializerMethodField()
 
+    location = LocationSerializer(read_only=True)
+
     class Meta:
         model = Post
         fields = [
@@ -66,6 +68,7 @@ class PostSerializer(serializers.ModelSerializer):
             "image",  # Mantido por compatibilidade
             "media",
             "poll",
+            "location",
             "is_retweet",
             "retweet_of",
             "in_reply_to",
@@ -81,6 +84,7 @@ class PostSerializer(serializers.ModelSerializer):
             "retweets_count",
             "media",
             "poll",
+            "location",
             "stats",
             "is_retweeted",
             "created_at",
@@ -125,6 +129,13 @@ class PostCreateSerializer(serializers.ModelSerializer):
         help_text="Lista de arquivos de mídia (máximo 4)",
     )
 
+    # Campo para criar/anexar location
+    location = LocationCreateSerializer(
+        required=False,
+        allow_null=True,
+        help_text="Dados da localização (opcional)"
+    )
+
     class Meta:
         model = Post
         fields = [
@@ -132,6 +143,7 @@ class PostCreateSerializer(serializers.ModelSerializer):
             "image",  # Mantido por compatibilidade
             "in_reply_to",
             "media_files",
+            "location",
         ]
 
     def validate_content(self, value):
@@ -183,11 +195,20 @@ class PostCreateSerializer(serializers.ModelSerializer):
         return value
 
     def create(self, validated_data):
-        """Cria post e mídias associadas."""
+        """Cria post com mídias e location associadas se fornecida."""
+        location_data = validated_data.pop('location', None)
         media_files = validated_data.pop("media_files", [])
 
         # Criar post
         post = super().create(validated_data)
+
+        # Criar/associar location se fornecida
+        if location_data:
+            location_serializer = LocationCreateSerializer(data=location_data)
+            location_serializer.is_valid(raise_exception=True)
+            location = location_serializer.save()
+            post.location = location
+            post.save(update_fields=['location'])
 
         # Criar mídias se fornecidas
         if media_files:
