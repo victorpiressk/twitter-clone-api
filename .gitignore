@@ -36,6 +36,15 @@ MANIFEST
 pip-log.txt
 pip-delete-this-directory.txt
 
+# Media files (uploads)
+/medias/
+/media/
+/test_media/
+*.jpg
+*.png
+*.mp4
+*.gif
+
 # Unit test / coverage reports
 htmlcov/
 .tox/

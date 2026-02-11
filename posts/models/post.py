@@ -5,6 +5,8 @@ Post model - Postagens do sistema.
 from django.conf import settings
 from django.db import models
 
+from posts.models import Location
+
 
 class Post(models.Model):
     """
@@ -72,6 +74,16 @@ class Post(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Criado em")
 
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Atualizado em")
+
+    location = models.ForeignKey(
+        Location,
+        related_name="posts",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name="Localização",
+        help_text="Local onde o post foi criado",
+    )
 
     class Meta:
         verbose_name = "Post"
