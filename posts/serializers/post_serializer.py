@@ -5,7 +5,11 @@ Post serializers.
 from rest_framework import serializers
 
 from posts.models import Post, PostMedia
-from posts.serializers import PollSerializer, LocationSerializer, LocationCreateSerializer
+from posts.serializers import (
+    LocationCreateSerializer,
+    LocationSerializer,
+    PollSerializer,
+)
 from users.serializers import UserSerializer
 
 
@@ -131,9 +135,7 @@ class PostCreateSerializer(serializers.ModelSerializer):
 
     # Campo para criar/anexar location
     location = LocationCreateSerializer(
-        required=False,
-        allow_null=True,
-        help_text="Dados da localização (opcional)"
+        required=False, allow_null=True, help_text="Dados da localização (opcional)"
     )
 
     class Meta:
@@ -196,7 +198,7 @@ class PostCreateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         """Cria post com mídias e location associadas se fornecida."""
-        location_data = validated_data.pop('location', None)
+        location_data = validated_data.pop("location", None)
         media_files = validated_data.pop("media_files", [])
 
         # Criar post
@@ -208,7 +210,7 @@ class PostCreateSerializer(serializers.ModelSerializer):
             location_serializer.is_valid(raise_exception=True)
             location = location_serializer.save()
             post.location = location
-            post.save(update_fields=['location'])
+            post.save(update_fields=["location"])
 
         # Criar mídias se fornecidas
         if media_files:

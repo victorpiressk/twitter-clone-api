@@ -7,6 +7,7 @@ from django.db import models
 
 from posts.models import Location
 
+
 class Post(models.Model):
     """
     Modelo para postagens (tweets).
@@ -81,7 +82,7 @@ class Post(models.Model):
         null=True,
         blank=True,
         verbose_name="Localização",
-        help_text="Local onde o post foi criado"
+        help_text="Local onde o post foi criado",
     )
 
     class Meta:

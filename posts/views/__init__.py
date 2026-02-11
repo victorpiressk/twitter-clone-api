@@ -4,8 +4,8 @@ Posts views package.
 
 from .comment_viewset import CommentViewSet
 from .like_viewset import LikeViewSet
-from .poll_viewset import PollViewSet
 from .location_viewset import LocationViewSet
+from .poll_viewset import PollViewSet
 from .post_viewset import PostViewSet
 
 __all__ = [

@@ -4,6 +4,7 @@ Posts serializers package.
 
 from .comment_serializer import CommentSerializer
 from .like_serializer import LikeSerializer
+from .location_serializer import LocationCreateSerializer, LocationSerializer
 from .poll_serializer import (
     PollCreateSerializer,
     PollOptionSerializer,
@@ -12,7 +13,6 @@ from .poll_serializer import (
     PollVoteSerializer,
 )
 from .post_serializer import PostCreateSerializer, PostMediaSerializer, PostSerializer
-from .location_serializer import LocationSerializer, LocationCreateSerializer
 
 __all__ = [
     "PostSerializer",
