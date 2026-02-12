@@ -9,10 +9,11 @@ from .like import Like
 from .location import Location
 from .media import PostMedia
 from .poll import Poll, PollOption, PollVote
-from .post import Post
+from .post import Post, PostManager
 
 __all__ = [
     "Post",
+    "PostManager",
     "Comment",
     "Like",
     "PostMedia",
