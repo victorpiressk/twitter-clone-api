@@ -12,7 +12,7 @@ from rest_framework.response import Response
 
 from posts.models import Post
 from posts.permissions import IsAuthorOrReadOnly
-from posts.serializers import PollCreateSerializer, PostCreateSerializer, PostSerializer
+from posts.serializers import PollCreateSerializer, PostCreateSerializer, PostSerializer, ScheduledPostSerializer
 
 
 class PostViewSet(viewsets.ModelViewSet):
@@ -124,6 +124,37 @@ class PostViewSet(viewsets.ModelViewSet):
         return Response(
             output_serializer.data, status=status.HTTP_201_CREATED, headers=headers
         )
+    
+    def get_queryset(self):
+        """
+        Retorna queryset de posts.
+        
+        Por padrão, retorna apenas posts publicados (não agendados para o futuro).
+        Admins e donos dos posts podem ver seus próprios posts agendados
+        usando o endpoint /api/posts/scheduled/
+        """
+        # Usar o manager customizado que filtra por scheduled_for
+        queryset = Post.objects.published().select_related("author").prefetch_related("media", "poll", "location")
+        
+        return queryset
+    
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+    def scheduled(self, request):
+        """
+        Lista posts agendados do usuário autenticado.
+        
+        Endpoint: GET /api/posts/scheduled/
+        
+        Retorna posts que estão agendados para publicação futura.
+        Apenas o próprio usuário pode ver seus posts agendados.
+        """
+        # Buscar posts agendados do usuário
+        scheduled_posts = Post.objects.scheduled().filter(
+            author=request.user
+        ).select_related("author").order_by('scheduled_for')
+        
+        serializer = ScheduledPostSerializer(scheduled_posts, many=True)
+        return Response(serializer.data)
 
     @action(detail=False, methods=["get"])
     def feed(self, request):
@@ -134,11 +165,9 @@ class PostViewSet(viewsets.ModelViewSet):
         following_ids = request.user.following.values_list("following_id", flat=True)
 
         # Posts dos usuários seguidos + posts do próprio usuário
-        posts = (
-            Post.objects.filter(author_id__in=list(following_ids) + [request.user.id])
-            .select_related("author")
-            .prefetch_related("media")
-        )
+        posts = Post.objects.published().filter(
+            author_id__in=list(following_ids) + [request.user.id]
+        ).select_related("author").prefetch_related("media", "poll", "location")
 
         serializer = self.get_serializer(posts, many=True)
         return Response(serializer.data)
