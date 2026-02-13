@@ -15,9 +15,6 @@ services:
     depends_on:
       db:
         condition: service_healthy
-      redis:
-        condition: service_started
-
   db:
     image: postgres:14.0-alpine
     ports:
@@ -35,47 +32,6 @@ services:
       retries: 5
     networks:
       - backend
-
-  # ========== NOVOS SERVIÇOS ==========
-  
-  redis:
-    image: redis:7-alpine
-    ports:
-      - 6379:6379
-    networks:
-      - backend
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
-
-  celery_worker:
-    build: .
-    command: celery -A config worker -l info --pool=solo
-    volumes:
-      - .:/app
-    env_file:
-      - .env.example
-    networks:
-      - backend
-    depends_on:
-      - redis
-      - db
-
-  celery_beat:
-    build: .
-    command: celery -A config beat -l info
-    volumes:
-      - .:/app
-    env_file:
-      - .env.example
-    networks:
-      - backend
-    depends_on:
-      - redis
-      - db
-
 networks:
   backend:
     driver: bridge
