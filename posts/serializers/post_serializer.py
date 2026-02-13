@@ -3,6 +3,7 @@ Post serializers.
 """
 
 from django.utils import timezone
+
 from rest_framework import serializers
 
 from posts.models import Post, PostMedia
@@ -138,7 +139,7 @@ class PostCreateSerializer(serializers.ModelSerializer):
     scheduled_for = serializers.DateTimeField(
         required=False,
         allow_null=True,
-        help_text="Data e hora para publicação agendada (formato ISO 8601)"
+        help_text="Data e hora para publicação agendada (formato ISO 8601)",
     )
 
     class Meta:
@@ -199,7 +200,7 @@ class PostCreateSerializer(serializers.ModelSerializer):
                 )
 
         return value
-    
+
     def validate_scheduled_for(self, value):
         """
         Valida que scheduled_for não é no passado.
@@ -207,19 +208,19 @@ class PostCreateSerializer(serializers.ModelSerializer):
         if value is not None:
             # Permitir pequena margem de erro (5 minutos no passado)
             min_time = timezone.now() - timezone.timedelta(minutes=5)
-            
+
             if value < min_time:
                 raise serializers.ValidationError(
                     "A data de agendamento não pode ser no passado."
                 )
-        
+
         return value
 
     def create(self, validated_data):
         """Cria post com mídias e location associadas se fornecida."""
         location_data = validated_data.pop("location", None)
         media_files = validated_data.pop("media_files", [])
-        scheduled_for = validated_data.pop('scheduled_for', None)
+        scheduled_for = validated_data.pop("scheduled_for", None)
 
         # Criar post
         post = super().create(validated_data)
@@ -227,7 +228,7 @@ class PostCreateSerializer(serializers.ModelSerializer):
         # Definir scheduled_for se fornecido
         if scheduled_for is not None:
             post.scheduled_for = scheduled_for
-            post.save(update_fields=['scheduled_for'])
+            post.save(update_fields=["scheduled_for"])
 
         # Criar/associar location se fornecida
         if location_data:
@@ -261,13 +262,13 @@ class PostCreateSerializer(serializers.ModelSerializer):
 class ScheduledPostSerializer(serializers.ModelSerializer):
     """
     Serializer simplificado para posts agendados.
-    
+
     Usado no endpoint /api/posts/scheduled/ para listar
     posts que o usuário agendou.
     """
-    
+
     author = UserSerializer(read_only=True)
-    
+
     class Meta:
         model = Post
         fields = [

@@ -2,7 +2,8 @@
 Post ViewSet.
 """
 
-from django.db import transaction
+from django.db import models, transaction
+from django.utils import timezone
 
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
@@ -12,7 +13,12 @@ from rest_framework.response import Response
 
 from posts.models import Post
 from posts.permissions import IsAuthorOrReadOnly
-from posts.serializers import PollCreateSerializer, PostCreateSerializer, PostSerializer, ScheduledPostSerializer
+from posts.serializers import (
+    PollCreateSerializer,
+    PostCreateSerializer,
+    PostSerializer,
+    ScheduledPostSerializer,
+)
 
 
 class PostViewSet(viewsets.ModelViewSet):
@@ -124,35 +130,62 @@ class PostViewSet(viewsets.ModelViewSet):
         return Response(
             output_serializer.data, status=status.HTTP_201_CREATED, headers=headers
         )
-    
+
     def get_queryset(self):
         """
         Retorna queryset de posts.
-        
-        Por padrão, retorna apenas posts publicados (não agendados para o futuro).
-        Admins e donos dos posts podem ver seus próprios posts agendados
-        usando o endpoint /api/posts/scheduled/
+
+        - Listagens (list, feed): apenas posts publicados
+        - Retrieve: posts publicados + posts agendados do próprio usuário
         """
-        # Usar o manager customizado que filtra por scheduled_for
-        queryset = Post.objects.published().select_related("author").prefetch_related("media", "poll", "location")
-        
+        queryset = (
+            Post.objects.all()
+            .select_related("author")
+            .prefetch_related("media", "poll", "location")
+        )
+
+        # Se for retrieve (detalhe de um post específico), permitir autor ver agendado
+        if self.action == "retrieve":
+            if self.request.user.is_authenticated:
+                # Posts publicados OU posts agendados do usuário
+                queryset = queryset.filter(
+                    models.Q(scheduled_for__isnull=True)
+                    | models.Q(scheduled_for__lte=timezone.now())
+                    | models.Q(author=self.request.user)
+                )
+            else:
+                # Não autenticado: apenas publicados
+                queryset = queryset.filter(
+                    models.Q(scheduled_for__isnull=True)
+                    | models.Q(scheduled_for__lte=timezone.now())
+                )
+        elif self.action != "scheduled":
+            # Listagens: apenas publicados
+            queryset = queryset.filter(
+                models.Q(scheduled_for__isnull=True)
+                | models.Q(scheduled_for__lte=timezone.now())
+            )
+
         return queryset
-    
-    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+
+    @action(detail=False, methods=["get"], permission_classes=[IsAuthenticated])
     def scheduled(self, request):
         """
         Lista posts agendados do usuário autenticado.
-        
+
         Endpoint: GET /api/posts/scheduled/
-        
+
         Retorna posts que estão agendados para publicação futura.
         Apenas o próprio usuário pode ver seus posts agendados.
         """
         # Buscar posts agendados do usuário
-        scheduled_posts = Post.objects.scheduled().filter(
-            author=request.user
-        ).select_related("author").order_by('scheduled_for')
-        
+        scheduled_posts = (
+            Post.objects.scheduled()
+            .filter(author=request.user)
+            .select_related("author")
+            .order_by("scheduled_for")
+        )
+
         serializer = ScheduledPostSerializer(scheduled_posts, many=True)
         return Response(serializer.data)
 
@@ -165,9 +198,12 @@ class PostViewSet(viewsets.ModelViewSet):
         following_ids = request.user.following.values_list("following_id", flat=True)
 
         # Posts dos usuários seguidos + posts do próprio usuário
-        posts = Post.objects.published().filter(
-            author_id__in=list(following_ids) + [request.user.id]
-        ).select_related("author").prefetch_related("media", "poll", "location")
+        posts = (
+            Post.objects.published()
+            .filter(author_id__in=list(following_ids) + [request.user.id])
+            .select_related("author")
+            .prefetch_related("media", "poll", "location")
+        )
 
         serializer = self.get_serializer(posts, many=True)
         return Response(serializer.data)

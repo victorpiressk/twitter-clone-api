@@ -12,7 +12,12 @@ from .poll_serializer import (
     PollSerializer,
     PollVoteSerializer,
 )
-from .post_serializer import PostCreateSerializer, PostMediaSerializer, PostSerializer, ScheduledPostSerializer
+from .post_serializer import (
+    PostCreateSerializer,
+    PostMediaSerializer,
+    PostSerializer,
+    ScheduledPostSerializer,
+)
 
 __all__ = [
     "PostSerializer",

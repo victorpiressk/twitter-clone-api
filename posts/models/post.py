@@ -11,23 +11,22 @@ from posts.models import Location
 
 class PostManager(models.Manager):
     """Manager customizado para Post."""
-    
+
     def published(self):
         """
         Retorna apenas posts publicados (não agendados para o futuro).
         """
         return self.filter(
-            models.Q(scheduled_for__isnull=True) | 
-            models.Q(scheduled_for__lte=timezone.now())
+            models.Q(scheduled_for__isnull=True)
+            | models.Q(scheduled_for__lte=timezone.now())
         )
-    
+
     def scheduled(self):
         """
         Retorna apenas posts agendados para o futuro.
         """
         return self.filter(
-            scheduled_for__isnull=False,
-            scheduled_for__gt=timezone.now()
+            scheduled_for__isnull=False, scheduled_for__gt=timezone.now()
         )
 
 
@@ -114,7 +113,7 @@ class Post(models.Model):
         null=True,
         blank=True,
         verbose_name="Agendado para",
-        help_text="Data e hora em que o post será publicado. Se null, publica imediatamente."
+        help_text="Data e hora de publicação. Se null, publica imediatamente.",
     )
 
     class Meta:
@@ -144,7 +143,7 @@ class Post(models.Model):
     def comments_count(self):
         """Retorna quantidade de comentários."""
         return self.comments.count()
-    
+
     @property
     def is_published(self):
         """
