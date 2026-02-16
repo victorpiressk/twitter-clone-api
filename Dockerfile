@@ -28,7 +28,15 @@ RUN curl -sSL https://install.python-poetry.org | python3 -
 # Copiar e instalar dependências Python
 WORKDIR $PYSETUP_PATH
 COPY poetry.lock pyproject.toml ./
-RUN poetry install --no-root
+RUN poetry install --no-root --sync
+
+# Instalar explicitamente as dependências de dev
+RUN poetry run pip install \
+    pytest-django==4.11.1 \
+    pytest-cov==7.0.0 \
+    black==25.12.0 \
+    flake8==7.3.0 \
+    isort==7.0.0
 
 # Copiar código da aplicação
 WORKDIR /app

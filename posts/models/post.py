@@ -119,7 +119,7 @@ class Post(models.Model):
     views_count = models.PositiveIntegerField(
         default=0,
         verbose_name="Visualizações",
-        help_text="Número de vezes que o post foi visualizado"
+        help_text="Número de vezes que o post foi visualizado",
     )
 
     class Meta:
@@ -141,18 +141,18 @@ class Post(models.Model):
         if self.is_retweet and self.retweet_of:
             return f"{self.author.username} retweetou: {self.retweet_of.content[:50]}"
         return f"{self.author.username}: {self.content[:50]}"
-    
+
     def increment_views(self):
         """
         Incrementa o contador de visualizações.
-        
+
         Usa F() expression para evitar race conditions.
         """
         from django.db.models import F
-        
-        Post.objects.filter(pk=self.pk).update(views_count=F('views_count') + 1)
+
+        Post.objects.filter(pk=self.pk).update(views_count=F("views_count") + 1)
         # Refresh para ter o valor atualizado
-        self.refresh_from_db(fields=['views_count'])
+        self.refresh_from_db(fields=["views_count"])
 
     @property
     def likes_count(self):
