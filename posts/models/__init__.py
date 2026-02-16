@@ -9,6 +9,7 @@ from .like import Like
 from .location import Location
 from .media import PostMedia
 from .poll import Poll, PollOption, PollVote
+from .hashtag import Hashtag
 from .post import Post, PostManager
 
 __all__ = [
@@ -21,4 +22,5 @@ __all__ = [
     "PollOption",
     "PollVote",
     "Location",
+    "Hashtag",
 ]
