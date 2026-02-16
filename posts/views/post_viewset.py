@@ -168,6 +168,20 @@ class PostViewSet(viewsets.ModelViewSet):
 
         return queryset
 
+    def retrieve(self, request, *args, **kwargs):
+        """
+        Retorna detalhes de um post.
+        
+        ATUALIZADO: Incrementa contador de views automaticamente.
+        """
+        instance = self.get_object()
+        
+        # Incrementar views_count
+        instance.increment_views()
+        
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
+
     @action(detail=False, methods=["get"], permission_classes=[IsAuthenticated])
     def scheduled(self, request):
         """
@@ -347,4 +361,45 @@ class PostViewSet(viewsets.ModelViewSet):
             current_post = current_post.in_reply_to
 
         serializer = self.get_serializer(thread_posts, many=True)
+        return Response(serializer.data)
+    
+    @action(detail=False, methods=['get'])
+    def trending(self, request):
+        """
+        Lista posts mais vistos (trending).
+        
+        Endpoint: GET /api/posts/trending/
+        
+        Query params:
+        - limit: número de posts (padrão: 10, máximo: 50)
+        - period: período (today, week, month, all - padrão: all)
+        """
+        from django.utils import timezone
+        from datetime import timedelta
+        
+        # Pegar limite (padrão 10, máximo 50)
+        limit = int(request.query_params.get('limit', 10))
+        limit = min(limit, 50)  # Máximo 50
+        
+        # Pegar período
+        period = request.query_params.get('period', 'all')
+        
+        # Filtrar por período
+        queryset = Post.objects.published()
+        
+        if period == 'today':
+            start_date = timezone.now() - timedelta(days=1)
+            queryset = queryset.filter(created_at__gte=start_date)
+        elif period == 'week':
+            start_date = timezone.now() - timedelta(days=7)
+            queryset = queryset.filter(created_at__gte=start_date)
+        elif period == 'month':
+            start_date = timezone.now() - timedelta(days=30)
+            queryset = queryset.filter(created_at__gte=start_date)
+        # 'all': sem filtro de data
+        
+        # Ordenar por views (mais vistos primeiro)
+        trending_posts = queryset.order_by('-views_count')[:limit]
+        
+        serializer = self.get_serializer(trending_posts, many=True)
         return Response(serializer.data)
