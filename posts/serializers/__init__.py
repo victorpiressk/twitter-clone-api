@@ -12,6 +12,7 @@ from .poll_serializer import (
     PollSerializer,
     PollVoteSerializer,
 )
+from .hashtag_serializers import HashtagSerializer
 from .post_serializer import (
     PostCreateSerializer,
     PostMediaSerializer,
@@ -33,4 +34,5 @@ __all__ = [
     "LocationSerializer",
     "LocationCreateSerializer",
     "ScheduledPostSerializer",
+    "HashtagSerializer",
 ]

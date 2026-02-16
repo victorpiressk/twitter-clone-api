@@ -11,8 +11,10 @@ from posts.serializers import (
     LocationCreateSerializer,
     LocationSerializer,
     PollSerializer,
+    HashtagSerializer,
 )
 from users.serializers import UserSerializer
+from posts.utils import extract_hashtags
 
 
 # NOVO SERIALIZER - PostMedia
@@ -56,6 +58,7 @@ class PostSerializer(serializers.ModelSerializer):
     is_published = serializers.ReadOnlyField()
     stats = serializers.SerializerMethodField()
     is_retweeted = serializers.SerializerMethodField()
+    hashtags = HashtagSerializer(many=True, read_only=True)
 
     class Meta:
         model = Post
@@ -67,6 +70,7 @@ class PostSerializer(serializers.ModelSerializer):
             "media",
             "poll",
             "location",
+            "hashtags",
             "scheduled_for",
             "is_published",
             "is_retweet",
@@ -85,6 +89,7 @@ class PostSerializer(serializers.ModelSerializer):
             "media",
             "poll",
             "location",
+            "hashtags",
             "scheduled_for",
             "is_published",
             "stats",
@@ -222,6 +227,10 @@ class PostCreateSerializer(serializers.ModelSerializer):
         media_files = validated_data.pop("media_files", [])
         scheduled_for = validated_data.pop("scheduled_for", None)
 
+        # Extrair hashtags do conteúdo
+        content = validated_data.get('content', '')
+        hashtag_names = extract_hashtags(content)
+
         # Criar post
         post = super().create(validated_data)
 
@@ -255,6 +264,27 @@ class PostCreateSerializer(serializers.ModelSerializer):
                 PostMedia.objects.create(
                     post=post, type=media_type, file=file, order=index
                 )
+
+        # Processar hashtags extraídas
+        if hashtag_names:
+            from posts.models import Hashtag
+            
+            hashtags = []
+            for name in hashtag_names:
+                # Reutilizar hashtag existente ou criar nova
+                hashtag, created = Hashtag.objects.get_or_create(name=name)
+                hashtags.append(hashtag)
+                
+                # Incrementar contador
+                if not created:
+                    hashtag.increment_count()
+                else:
+                    # Nova hashtag, definir contador = 1
+                    hashtag.posts_count = 1
+                    hashtag.save(update_fields=['posts_count'])
+            
+            # Associar hashtags ao post
+            post.hashtags.set(hashtags)
 
         return post
 
