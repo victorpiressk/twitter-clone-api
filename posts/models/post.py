@@ -116,6 +116,12 @@ class Post(models.Model):
         help_text="Data e hora de publicação. Se null, publica imediatamente.",
     )
 
+    views_count = models.PositiveIntegerField(
+        default=0,
+        verbose_name="Visualizações",
+        help_text="Número de vezes que o post foi visualizado",
+    )
+
     class Meta:
         verbose_name = "Post"
         verbose_name_plural = "Posts"
@@ -127,12 +133,26 @@ class Post(models.Model):
             models.Index(fields=["retweet_of"]),
             models.Index(fields=["in_reply_to"]),
             models.Index(fields=["scheduled_for"]),
+            models.Index(fields=["views_count"]),  # (para ordenação por popularidade)
+            models.Index(fields=["-views_count"]),  # (ordenação decrescente)
         ]
 
     def __str__(self):
         if self.is_retweet and self.retweet_of:
             return f"{self.author.username} retweetou: {self.retweet_of.content[:50]}"
         return f"{self.author.username}: {self.content[:50]}"
+
+    def increment_views(self):
+        """
+        Incrementa o contador de visualizações.
+
+        Usa F() expression para evitar race conditions.
+        """
+        from django.db.models import F
+
+        Post.objects.filter(pk=self.pk).update(views_count=F("views_count") + 1)
+        # Refresh para ter o valor atualizado
+        self.refresh_from_db(fields=["views_count"])
 
     @property
     def likes_count(self):

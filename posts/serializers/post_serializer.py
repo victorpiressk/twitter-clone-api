@@ -99,7 +99,7 @@ class PostSerializer(serializers.ModelSerializer):
             "comments": obj.comments_count,
             "retweets": obj.retweets_count,
             "likes": obj.likes_count,
-            "views": 0,  # Será implementado depois
+            "views": obj.views_count,
         }
 
     def get_is_retweeted(self, obj):
