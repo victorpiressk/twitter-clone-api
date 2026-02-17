@@ -2113,20 +2113,20 @@ class TestHashtagViewSet:
         Hashtag.objects.create(name="python", posts_count=100)
         Hashtag.objects.create(name="javascript", posts_count=50)
         Hashtag.objects.create(name="django", posts_count=25)
-        
+
         url = reverse("hashtag-trending")
         response = api_client.get(url)
-        
+
         assert response.status_code == status.HTTP_200_OK
-        
+
         # Verificar estrutura do response
         assert "meta" in response.data
         assert "results" in response.data
-        
+
         # Verificar metadados
         assert response.data["meta"]["period"] == "all"
         assert response.data["meta"]["total"] == 3
-        
+
         # Deve estar ordenado por posts_count
         results = response.data["results"]
         assert results[0]["name"] == "python"
@@ -2137,16 +2137,16 @@ class TestHashtagViewSet:
         """Testa limite de trending hashtags."""
         for i in range(20):
             Hashtag.objects.create(name=f"tag{i}", posts_count=i)
-        
+
         url = reverse("hashtag-trending")
         response = api_client.get(url, {"limit": 5})
-        
+
         assert response.status_code == status.HTTP_200_OK
-        
+
         # Verificar estrutura
         assert "meta" in response.data
         assert "results" in response.data
-        
+
         # Verificar limite
         assert response.data["meta"]["limit"] == 5
         assert len(response.data["results"]) == 5
@@ -2243,12 +2243,12 @@ class TestTrendsEnhancements:
     def test_trending_returns_metadata(self, api_client):
         """Testa que trending retorna metadados."""
         Hashtag.objects.create(name="python", posts_count=10)
-        
+
         url = reverse("hashtag-trending")
         response = api_client.get(url)
-        
+
         assert response.status_code == status.HTTP_200_OK
-        
+
         # Verificar estrutura meta
         meta = response.data["meta"]
         assert "period" in meta
@@ -2258,23 +2258,18 @@ class TestTrendsEnhancements:
 
     def test_trending_with_recent_posts_count(self, api_client, user):
         """Testa que trending com período retorna recent_posts_count."""
-        from django.utils import timezone
-        from datetime import timedelta
-        
+
         hashtag = Hashtag.objects.create(name="python", posts_count=100)
-        
+
         # Criar post recente
-        recent_post = Post.objects.create(
-            author=user,
-            content="#python"
-        )
+        recent_post = Post.objects.create(author=user, content="#python")
         recent_post.hashtags.add(hashtag)
-        
+
         url = reverse("hashtag-trending")
         response = api_client.get(url, {"period": "week"})
-        
+
         assert response.status_code == status.HTTP_200_OK
-        
+
         # Verificar que recent_posts_count está presente
         results = response.data["results"]
         if len(results) > 0:
@@ -2283,12 +2278,12 @@ class TestTrendsEnhancements:
     def test_trending_period_filters(self, api_client):
         """Testa diferentes períodos de trending."""
         Hashtag.objects.create(name="python", posts_count=10)
-        
+
         url = reverse("hashtag-trending")
-        
+
         # Testar cada período
         for period in ["all", "today", "week", "month"]:
             response = api_client.get(url, {"period": period})
-            
+
             assert response.status_code == status.HTTP_200_OK
             assert response.data["meta"]["period"] == period

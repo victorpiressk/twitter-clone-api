@@ -25,6 +25,6 @@ class HashtagSerializer(serializers.ModelSerializer):
             "slug",
             "posts_count",
             "recent_posts_count",
-            "created_at"
+            "created_at",
         ]
         read_only_fields = ["id", "slug", "posts_count", "created_at"]
