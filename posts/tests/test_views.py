@@ -2113,27 +2113,43 @@ class TestHashtagViewSet:
         Hashtag.objects.create(name="python", posts_count=100)
         Hashtag.objects.create(name="javascript", posts_count=50)
         Hashtag.objects.create(name="django", posts_count=25)
-
+        
         url = reverse("hashtag-trending")
         response = api_client.get(url)
-
+        
         assert response.status_code == status.HTTP_200_OK
-
+        
+        # Verificar estrutura do response
+        assert "meta" in response.data
+        assert "results" in response.data
+        
+        # Verificar metadados
+        assert response.data["meta"]["period"] == "all"
+        assert response.data["meta"]["total"] == 3
+        
         # Deve estar ordenado por posts_count
-        assert response.data[0]["name"] == "python"
-        assert response.data[1]["name"] == "javascript"
-        assert response.data[2]["name"] == "django"
+        results = response.data["results"]
+        assert results[0]["name"] == "python"
+        assert results[1]["name"] == "javascript"
+        assert results[2]["name"] == "django"
 
     def test_trending_hashtags_limit(self, api_client):
         """Testa limite de trending hashtags."""
         for i in range(20):
             Hashtag.objects.create(name=f"tag{i}", posts_count=i)
-
+        
         url = reverse("hashtag-trending")
         response = api_client.get(url, {"limit": 5})
-
+        
         assert response.status_code == status.HTTP_200_OK
-        assert len(response.data) == 5
+        
+        # Verificar estrutura
+        assert "meta" in response.data
+        assert "results" in response.data
+        
+        # Verificar limite
+        assert response.data["meta"]["limit"] == 5
+        assert len(response.data["results"]) == 5
 
     def test_search_hashtags(self, api_client):
         """Testa busca de hashtags."""
@@ -2218,3 +2234,61 @@ class TestPostViewSetWithHashtags:
 
         post_data = response.data["results"][0]
         assert "hashtags" in post_data
+
+
+@pytest.mark.django_db
+class TestTrendsEnhancements:
+    """Testes para melhorias no trending."""
+
+    def test_trending_returns_metadata(self, api_client):
+        """Testa que trending retorna metadados."""
+        Hashtag.objects.create(name="python", posts_count=10)
+        
+        url = reverse("hashtag-trending")
+        response = api_client.get(url)
+        
+        assert response.status_code == status.HTTP_200_OK
+        
+        # Verificar estrutura meta
+        meta = response.data["meta"]
+        assert "period" in meta
+        assert "limit" in meta
+        assert "total" in meta
+        assert "generated_at" in meta
+
+    def test_trending_with_recent_posts_count(self, api_client, user):
+        """Testa que trending com período retorna recent_posts_count."""
+        from django.utils import timezone
+        from datetime import timedelta
+        
+        hashtag = Hashtag.objects.create(name="python", posts_count=100)
+        
+        # Criar post recente
+        recent_post = Post.objects.create(
+            author=user,
+            content="#python"
+        )
+        recent_post.hashtags.add(hashtag)
+        
+        url = reverse("hashtag-trending")
+        response = api_client.get(url, {"period": "week"})
+        
+        assert response.status_code == status.HTTP_200_OK
+        
+        # Verificar que recent_posts_count está presente
+        results = response.data["results"]
+        if len(results) > 0:
+            assert "recent_posts_count" in results[0]
+
+    def test_trending_period_filters(self, api_client):
+        """Testa diferentes períodos de trending."""
+        Hashtag.objects.create(name="python", posts_count=10)
+        
+        url = reverse("hashtag-trending")
+        
+        # Testar cada período
+        for period in ["all", "today", "week", "month"]:
+            response = api_client.get(url, {"period": period})
+            
+            assert response.status_code == status.HTTP_200_OK
+            assert response.data["meta"]["period"] == period

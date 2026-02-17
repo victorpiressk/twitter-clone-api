@@ -4,7 +4,7 @@ ViewSet para Hashtags.
 
 from datetime import timedelta
 
-from django.db import models
+from django.db.models import Count, Q 
 from django.utils import timezone
 
 from rest_framework import status, viewsets
@@ -47,8 +47,8 @@ class HashtagViewSet(viewsets.ReadOnlyModelViewSet):
         # Posts publicados com essa hashtag
         posts = (
             hashtag.posts.filter(
-                models.Q(scheduled_for__isnull=True)
-                | models.Q(scheduled_for__lte=timezone.now())
+                Q(scheduled_for__isnull=True)
+                | Q(scheduled_for__lte=timezone.now())
             )
             .select_related("author")
             .prefetch_related("media", "poll", "location", "hashtags")
@@ -58,51 +58,60 @@ class HashtagViewSet(viewsets.ReadOnlyModelViewSet):
         serializer = PostSerializer(posts, many=True, context={"request": request})
         return Response(serializer.data)
 
-    @action(detail=False, methods=["get"])
+    @action(detail=False, methods=['get'])
     def trending(self, request):
         """
-        Hashtags mais usadas.
-
+        Lista hashtags em trending com metadados.
+        
         GET /api/hashtags/trending/
-        GET /api/hashtags/trending/?limit=20&period=week
+        GET /api/hashtags/trending/?period=week&limit=20
+        
+        Response inclui:
+        - meta: período, total de hashtags, timestamp
+        - results: hashtags com posts_count e recent_count
         """
-        limit = int(request.query_params.get("limit", 10))
+        limit = int(request.query_params.get('limit', 10))
         limit = min(limit, 50)
-
-        period = request.query_params.get("period", "all")
-
+        
+        period = request.query_params.get('period', 'all')
+        
         queryset = Hashtag.objects.all()
-
-        # Filtrar por período
-        if period != "all":
-            from django.db.models import Count
-
-            if period == "today":
-                start_date = timezone.now() - timedelta(days=1)
-            elif period == "week":
-                start_date = timezone.now() - timedelta(days=7)
-            elif period == "month":
-                start_date = timezone.now() - timedelta(days=30)
-            else:
-                start_date = None
-
-            if start_date:
-                queryset = (
-                    queryset.annotate(
-                        recent_posts_count=Count(
-                            "posts", filter=models.Q(posts__created_at__gte=start_date)
-                        )
-                    )
-                    .filter(recent_posts_count__gt=0)
-                    .order_by("-recent_posts_count")
+        
+        # Calcular data inicial do período
+        start_date = None
+        if period == 'today':
+            start_date = timezone.now() - timedelta(days=1)
+        elif period == 'week':
+            start_date = timezone.now() - timedelta(days=7)
+        elif period == 'month':
+            start_date = timezone.now() - timedelta(days=30)
+        
+        # Anotar com contagem de posts recentes se período != 'all'
+        if start_date:
+            queryset = queryset.annotate(
+                recent_posts_count=Count(
+                    'posts',
+                    filter=Q(posts__created_at__gte=start_date)
                 )
-
-        if period == "all":
-            queryset = queryset.order_by("-posts_count")
-
+            ).filter(recent_posts_count__gt=0).order_by('-recent_posts_count')
+        else:
+            queryset = queryset.order_by('-posts_count')
+        
         trending = queryset[:limit]
+        
+        # Serializar com metadados adicionais
         serializer = self.get_serializer(trending, many=True)
-        return Response(serializer.data)
+        
+        # Adicionar metadados ao response
+        return Response({
+            "meta": {
+                "period": period,
+                "limit": limit,
+                "total": trending.count(),
+                "generated_at": timezone.now().isoformat(),
+            },
+            "results": serializer.data
+        })
 
     @action(detail=False, methods=["get"])
     def search(self, request):
