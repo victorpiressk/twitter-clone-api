@@ -141,7 +141,7 @@ class PostViewSet(viewsets.ModelViewSet):
         queryset = (
             Post.objects.all()
             .select_related("author")
-            .prefetch_related("media", "poll", "location")
+            .prefetch_related("media", "poll", "location", "hashtags")
         )
 
         # Se for retrieve (detalhe de um post específico), permitir autor ver agendado
@@ -216,7 +216,7 @@ class PostViewSet(viewsets.ModelViewSet):
             Post.objects.published()
             .filter(author_id__in=list(following_ids) + [request.user.id])
             .select_related("author")
-            .prefetch_related("media", "poll", "location")
+            .prefetch_related("media", "poll", "location", "hashtags")
         )
 
         serializer = self.get_serializer(posts, many=True)
@@ -338,7 +338,7 @@ class PostViewSet(viewsets.ModelViewSet):
         replies = (
             Post.objects.filter(in_reply_to=post)
             .select_related("author")
-            .prefetch_related("media")
+            .prefetch_related("media", "hashtags")
             .order_by("created_at")
         )
 

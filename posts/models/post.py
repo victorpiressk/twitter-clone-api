@@ -109,6 +109,14 @@ class Post(models.Model):
         help_text="Local onde o post foi criado",
     )
 
+    hashtags = models.ManyToManyField(
+        "Hashtag",
+        related_name="posts",
+        blank=True,
+        verbose_name="Hashtags",
+        help_text="Hashtags extraídas do conteúdo",
+    )
+
     scheduled_for = models.DateTimeField(
         null=True,
         blank=True,

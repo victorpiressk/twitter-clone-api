@@ -8,6 +8,7 @@ from rest_framework.routers import DefaultRouter
 
 from posts.views import (
     CommentViewSet,
+    HashtagViewSet,
     LikeViewSet,
     LocationViewSet,
     PollViewSet,
@@ -20,6 +21,7 @@ router.register(r"comments", CommentViewSet, basename="comment")
 router.register(r"likes", LikeViewSet, basename="like")
 router.register(r"polls", PollViewSet, basename="poll")
 router.register(r"locations", LocationViewSet, basename="location")
+router.register(r"hashtags", HashtagViewSet, basename="hashtag")
 
 urlpatterns = [
     path("", include(router.urls)),
