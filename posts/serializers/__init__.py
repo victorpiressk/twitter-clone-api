@@ -3,6 +3,7 @@ Posts serializers package.
 """
 
 from .comment_serializer import CommentSerializer
+from .hashtag_serializers import HashtagSerializer
 from .like_serializer import LikeSerializer
 from .location_serializer import LocationCreateSerializer, LocationSerializer
 from .poll_serializer import (
@@ -12,7 +13,6 @@ from .poll_serializer import (
     PollSerializer,
     PollVoteSerializer,
 )
-from .hashtag_serializers import HashtagSerializer
 from .post_serializer import (
     PostCreateSerializer,
     PostMediaSerializer,

@@ -110,11 +110,11 @@ class Post(models.Model):
     )
 
     hashtags = models.ManyToManyField(
-        'Hashtag',
-        related_name='posts',
+        "Hashtag",
+        related_name="posts",
         blank=True,
         verbose_name="Hashtags",
-        help_text="Hashtags extraídas do conteúdo"
+        help_text="Hashtags extraídas do conteúdo",
     )
 
     scheduled_for = models.DateTimeField(

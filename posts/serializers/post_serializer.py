@@ -8,13 +8,13 @@ from rest_framework import serializers
 
 from posts.models import Post, PostMedia
 from posts.serializers import (
+    HashtagSerializer,
     LocationCreateSerializer,
     LocationSerializer,
     PollSerializer,
-    HashtagSerializer,
 )
-from users.serializers import UserSerializer
 from posts.utils import extract_hashtags
+from users.serializers import UserSerializer
 
 
 # NOVO SERIALIZER - PostMedia
@@ -228,7 +228,7 @@ class PostCreateSerializer(serializers.ModelSerializer):
         scheduled_for = validated_data.pop("scheduled_for", None)
 
         # Extrair hashtags do conteúdo
-        content = validated_data.get('content', '')
+        content = validated_data.get("content", "")
         hashtag_names = extract_hashtags(content)
 
         # Criar post
@@ -268,21 +268,21 @@ class PostCreateSerializer(serializers.ModelSerializer):
         # Processar hashtags extraídas
         if hashtag_names:
             from posts.models import Hashtag
-            
+
             hashtags = []
             for name in hashtag_names:
                 # Reutilizar hashtag existente ou criar nova
                 hashtag, created = Hashtag.objects.get_or_create(name=name)
                 hashtags.append(hashtag)
-                
+
                 # Incrementar contador
                 if not created:
                     hashtag.increment_count()
                 else:
                     # Nova hashtag, definir contador = 1
                     hashtag.posts_count = 1
-                    hashtag.save(update_fields=['posts_count'])
-            
+                    hashtag.save(update_fields=["posts_count"])
+
             # Associar hashtags ao post
             post.hashtags.set(hashtags)
 
