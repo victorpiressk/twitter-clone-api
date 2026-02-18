@@ -71,7 +71,10 @@ class Notification(models.Model):
         unique_together = [["recipient", "actor", "notification_type", "post"]]
 
     def __str__(self):
-        return f"{self.actor.username} → {self.recipient.username}: {self.get_notification_type_display()}"
+        return (
+            f"{self.actor.username} → {self.recipient.username}: "
+            f"{self.get_notification_type_display()}"
+        )
 
     def mark_as_read(self):
         """Marca notificação como lida."""

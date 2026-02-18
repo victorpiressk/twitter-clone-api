@@ -7,4 +7,4 @@ class PostsConfig(AppConfig):
 
     def ready(self):
         """Importar signals quando o app estiver pronto."""
-        import posts.signals
+        import posts.signals  # noqa: F401

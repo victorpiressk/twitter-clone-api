@@ -11,9 +11,9 @@ from posts.views import (
     HashtagViewSet,
     LikeViewSet,
     LocationViewSet,
+    NotificationViewSet,
     PollViewSet,
     PostViewSet,
-    NotificationViewSet,
 )
 
 router = DefaultRouter()

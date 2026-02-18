@@ -5,7 +5,7 @@ Signals para notificações de likes e follows.
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
-from posts.models import Notification, Like
+from posts.models import Like, Notification
 from users.models import Follow
 
 
