@@ -4,11 +4,14 @@ Testes para os serializers do app posts.
 
 from datetime import timedelta
 from decimal import Decimal
+from io import BytesIO
 
 from django.contrib.auth import get_user_model
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.utils import timezone
 
 import pytest
+from PIL import Image
 from rest_framework.test import APIRequestFactory
 
 from posts.models import (
@@ -16,10 +19,12 @@ from posts.models import (
     Hashtag,
     Like,
     Location,
+    Notification,
     Poll,
     PollOption,
     PollVote,
     Post,
+    PostMedia,
 )
 from posts.serializers import (
     CommentSerializer,
@@ -27,12 +32,14 @@ from posts.serializers import (
     LikeSerializer,
     LocationCreateSerializer,
     LocationSerializer,
+    NotificationSerializer,
     PollCreateSerializer,
     PollOptionSerializer,
     PollResultsSerializer,
     PollSerializer,
     PollVoteSerializer,
     PostCreateSerializer,
+    PostMediaSerializer,
     PostSerializer,
     ScheduledPostSerializer,
 )
@@ -219,13 +226,6 @@ class TestPostMediaSerializer:
 
     def test_serialize_post_with_media(self):
         """Testa serialização de post com mídias."""
-        from io import BytesIO
-
-        from django.core.files.uploadedfile import SimpleUploadedFile
-
-        from PIL import Image
-
-        from posts.models import PostMedia
 
         user = User.objects.create_user(username="testuser", password="pass123")
         post = Post.objects.create(author=user, content="Post with media")
@@ -257,14 +257,6 @@ class TestPostMediaSerializer:
 
     def test_media_url_generation(self):
         """Testa geração de URL da mídia."""
-        from io import BytesIO
-
-        from django.core.files.uploadedfile import SimpleUploadedFile
-
-        from PIL import Image
-
-        from posts.models import PostMedia
-        from posts.serializers import PostMediaSerializer
 
         user = User.objects.create_user(username="testuser", password="pass123")
         post = Post.objects.create(author=user, content="Test")
@@ -355,11 +347,6 @@ class TestPostCreateSerializer:
     # TESTES - Múltiplas Mídias (Validações)
     def test_validate_media_files_max_4(self):
         """Testa validação de máximo 4 mídias."""
-        from io import BytesIO
-
-        from django.core.files.uploadedfile import SimpleUploadedFile
-
-        from PIL import Image
 
         def create_test_image(name):
             file = BytesIO()
@@ -382,7 +369,6 @@ class TestPostCreateSerializer:
 
     def test_validate_image_size(self):
         """Testa validação de tamanho de imagem (máx 5MB)."""
-        from django.core.files.uploadedfile import SimpleUploadedFile
 
         # Imagem de 6MB (excede limite)
         large_content = b"0" * (6 * 1024 * 1024)
@@ -399,7 +385,6 @@ class TestPostCreateSerializer:
 
     def test_validate_video_size(self):
         """Testa validação de tamanho de vídeo (máx 50MB)."""
-        from django.core.files.uploadedfile import SimpleUploadedFile
 
         # Vídeo de 60MB (excede limite)
         large_content = b"0" * (60 * 1024 * 1024)
@@ -416,7 +401,6 @@ class TestPostCreateSerializer:
 
     def test_validate_unsupported_file_type(self):
         """Testa validação de tipo de arquivo não suportado."""
-        from django.core.files.uploadedfile import SimpleUploadedFile
 
         txt_file = SimpleUploadedFile(
             name="document.txt", content=b"Hello world", content_type="text/plain"
@@ -1399,3 +1383,78 @@ class TestPostCreateSerializerHashtagExtraction:
         # Deve ter apenas uma hashtag
         assert post.hashtags.count() == 1
         assert post.hashtags.first().name == "python"
+
+
+@pytest.mark.django_db
+class TestNotificationSerializer:
+    """Testes para NotificationSerializer."""
+
+    def test_serialize_notification_with_post(self):
+        """Testa serialização de notificação com post."""
+        alice = User.objects.create_user(username="alice", password="pass")
+        bob = User.objects.create_user(username="bob", password="pass")
+        post = Post.objects.create(author=alice, content="Meu post")
+
+        notification = Notification.objects.create(
+            recipient=alice, actor=bob, notification_type="like", post=post
+        )
+
+        serializer = NotificationSerializer(notification)
+        data = serializer.data
+
+        assert data["actor"]["username"] == "bob"
+        assert data["notification_type"] == "like"
+        assert data["notification_type_display"] == "Curtida"
+        assert data["post"] == post.id
+        assert data["is_read"] is False
+
+    def test_serialize_notification_post_preview(self):
+        """Testa campo post_preview."""
+        alice = User.objects.create_user(username="alice", password="pass")
+        bob = User.objects.create_user(username="bob", password="pass")
+        post = Post.objects.create(author=alice, content="Conteúdo do post")
+
+        notification = Notification.objects.create(
+            recipient=alice, actor=bob, notification_type="like", post=post
+        )
+
+        serializer = NotificationSerializer(notification)
+        data = serializer.data
+
+        assert "post_preview" in data
+        assert data["post_preview"]["id"] == post.id
+        assert data["post_preview"]["content"] == "Conteúdo do post"
+        assert data["post_preview"]["author"]["username"] == "alice"
+
+    def test_serialize_notification_without_post(self):
+        """Testa serialização de notificação sem post (follow)."""
+        alice = User.objects.create_user(username="alice", password="pass")
+        bob = User.objects.create_user(username="bob", password="pass")
+
+        notification = Notification.objects.create(
+            recipient=alice, actor=bob, notification_type="follow", post=None
+        )
+
+        serializer = NotificationSerializer(notification)
+        data = serializer.data
+
+        assert data["post"] is None
+        assert data["post_preview"] is None
+
+    def test_serialize_notification_truncates_long_content(self):
+        """Testa que post_preview trunca conteúdo longo."""
+        alice = User.objects.create_user(username="alice", password="pass")
+        bob = User.objects.create_user(username="bob", password="pass")
+
+        long_content = "A" * 150  # 150 caracteres
+        post = Post.objects.create(author=alice, content=long_content)
+
+        notification = Notification.objects.create(
+            recipient=alice, actor=bob, notification_type="like", post=post
+        )
+
+        serializer = NotificationSerializer(notification)
+        data = serializer.data
+
+        # Deve truncar em 100 caracteres
+        assert len(data["post_preview"]["content"]) == 100

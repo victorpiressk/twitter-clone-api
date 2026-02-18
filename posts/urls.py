@@ -11,6 +11,7 @@ from posts.views import (
     HashtagViewSet,
     LikeViewSet,
     LocationViewSet,
+    NotificationViewSet,
     PollViewSet,
     PostViewSet,
 )
@@ -22,6 +23,7 @@ router.register(r"likes", LikeViewSet, basename="like")
 router.register(r"polls", PollViewSet, basename="poll")
 router.register(r"locations", LocationViewSet, basename="location")
 router.register(r"hashtags", HashtagViewSet, basename="hashtag")
+router.register(r"notifications", NotificationViewSet, basename="notification")
 
 urlpatterns = [
     path("", include(router.urls)),
