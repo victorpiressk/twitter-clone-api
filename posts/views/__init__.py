@@ -9,6 +9,7 @@ from .location_viewset import LocationViewSet
 from .notification_views import NotificationViewSet
 from .poll_viewset import PollViewSet
 from .post_viewset import PostViewSet
+from .search_views import SearchViewSet
 
 __all__ = [
     "PostViewSet",
@@ -18,4 +19,5 @@ __all__ = [
     "LocationViewSet",
     "HashtagViewSet",
     "NotificationViewSet",
+    "SearchViewSet",
 ]
