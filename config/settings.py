@@ -170,7 +170,7 @@ MEDIA_ROOT = BASE_DIR / "media"
 
 # CORS Configuration (permitir frontend acessar a API)
 CORS_ALLOWED_ORIGINS = os.environ.get(
-    "CORS_ALLOWED_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000"
+    "CORS_ALLOWED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173"
 ).split(",")
 
 CORS_ALLOW_CREDENTIALS = True

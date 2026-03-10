@@ -28,6 +28,7 @@ def user_data():
         "password_confirm": "testpass123",
         "first_name": "Test",
         "last_name": "User",
+        "birth_date": "1995-06-15",
     }
 
 
@@ -90,6 +91,46 @@ class TestRegisterView:
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert "username" in response.data
         assert "password" in response.data
+
+    def test_register_with_valid_birth_date(self, api_client, user_data):
+        """Testa registro com data de nascimento válida (maior de 13 anos)."""
+        user_data["birth_date"] = "1995-06-15"
+        url = reverse("auth-register")
+        response = api_client.post(url, user_data, format="json")
+
+        assert response.status_code == status.HTTP_201_CREATED
+        assert response.data["user"]["birth_date"] == "1995-06-15"
+
+    def test_register_without_birth_date(self, api_client, user_data):
+        """Testa registro sem data de nascimento → erro 400."""
+        user_data.pop("birth_date")
+        url = reverse("auth-register")
+        response = api_client.post(url, user_data, format="json")
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "birth_date" in response.data
+
+    def test_register_underage_birth_date(self, api_client, user_data):
+        """Testa registro com idade menor que 13 anos → erro 400."""
+        from datetime import date, timedelta
+        underage = date.today() - timedelta(days=365 * 10)  # 10 anos
+        user_data["birth_date"] = underage.isoformat()
+        url = reverse("auth-register")
+        response = api_client.post(url, user_data, format="json")
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "birth_date" in response.data
+
+    def test_register_future_birth_date(self, api_client, user_data):
+        """Testa registro com data de nascimento no futuro → erro 400."""
+        from datetime import date, timedelta
+        future = date.today() + timedelta(days=365)
+        user_data["birth_date"] = future.isoformat()
+        url = reverse("auth-register")
+        response = api_client.post(url, user_data, format="json")
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "birth_date" in response.data
 
 
 @pytest.mark.django_db

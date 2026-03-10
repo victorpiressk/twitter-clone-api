@@ -56,7 +56,8 @@ Authorization: Token <seu_token_aqui>
   "password": "senha12345",
   "password_confirm": "senha12345",
   "first_name": "Novo",
-  "last_name": "Usuário"
+  "last_name": "Usuário",
+  "birth_date": "1995-06-15"
 }
 ```
 
@@ -74,7 +75,7 @@ Authorization: Token <seu_token_aqui>
     "banner": null,
     "location": "",
     "website": "",
-    "birth_date": null,
+    "birth_date": "1995-06-15",
     "stats": {
       "posts": 0,
       "following": 0,
@@ -87,7 +88,7 @@ Authorization: Token <seu_token_aqui>
 ```
 
 **Erros Possíveis:**
-- `400 Bad Request` - Senhas não coincidem, username/email já existe, campos obrigatórios faltando
+- `400 Bad Request` - Senhas não coincidem, username/email já existe, campos obrigatórios faltando, idade menor que 13 anos, data de nascimento no futuro
 
 ---
 
