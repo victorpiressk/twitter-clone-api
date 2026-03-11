@@ -58,6 +58,8 @@ class PostSerializer(serializers.ModelSerializer):
     is_published = serializers.ReadOnlyField()
     stats = serializers.SerializerMethodField()
     is_retweeted = serializers.SerializerMethodField()
+    is_liked = serializers.SerializerMethodField()
+    like_id = serializers.SerializerMethodField() 
     hashtags = HashtagSerializer(many=True, read_only=True)
 
     class Meta:
@@ -80,6 +82,8 @@ class PostSerializer(serializers.ModelSerializer):
             "is_retweeted",
             "created_at",
             "updated_at",
+            "is_liked",
+            "like_id",
         ]
         read_only_fields = [
             "id",
@@ -115,6 +119,21 @@ class PostSerializer(serializers.ModelSerializer):
                 author=request.user, is_retweet=True, retweet_of=obj
             ).exists()
         return False
+    
+    def get_is_liked(self, obj):
+        """Verifica se o usuário autenticado curtiu este post."""
+        request = self.context.get("request")
+        if request and request.user.is_authenticated:
+            return obj.likes.filter(user=request.user).exists()
+        return False
+
+    def get_like_id(self, obj):
+        """Retorna o ID do like do usuário autenticado, se existir."""
+        request = self.context.get("request")
+        if request and request.user.is_authenticated:
+            like = obj.likes.filter(user=request.user).first()
+            return like.id if like else None
+        return None
 
 
 class PostCreateSerializer(serializers.ModelSerializer):
