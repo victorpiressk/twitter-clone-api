@@ -101,7 +101,7 @@ class PostSerializer(serializers.ModelSerializer):
     def get_stats(self, obj):
         """Retorna estatísticas do post como objeto."""
         return {
-            "comments": obj.comments_count,
+            "replies": obj.replies_count,
             "retweets": obj.retweets_count,
             "likes": obj.likes_count,
             "views": obj.views_count,

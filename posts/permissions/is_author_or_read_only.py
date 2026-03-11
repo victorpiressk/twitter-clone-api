@@ -23,7 +23,7 @@ class IsAuthorOrReadOnly(permissions.BasePermission):
         Args:
             request: Requisição HTTP
             view: View sendo acessada
-            obj: Objeto sendo acessado (Post, Comment, etc)
+            obj: Objeto sendo acessado (Post, Replies, etc)
 
         Returns:
             bool: True se tem permissão, False caso contrário
@@ -33,6 +33,6 @@ class IsAuthorOrReadOnly(permissions.BasePermission):
             return True
 
         # Escrever: apenas se for o autor
-        # Funciona para Post (obj.author) e Comment (obj.user)
+        # Funciona para Post (obj.author) e Replies (obj.user)
         author = getattr(obj, "author", None) or getattr(obj, "user", None)
         return author == request.user

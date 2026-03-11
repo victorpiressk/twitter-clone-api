@@ -40,7 +40,7 @@ class TestViewsCounterSerializer:
         assert data["stats"]["views"] == 3
 
     def test_stats_includes_all_metrics(self):
-        """Testa que stats inclui comments, retweets, likes, views."""
+        """Testa que stats inclui replies, retweets, likes, views."""
         user = User.objects.create_user(username="testuser", password="pass123")
         post = Post.objects.create(author=user, content="Test")
 
@@ -49,7 +49,7 @@ class TestViewsCounterSerializer:
         serializer = PostSerializer(post)
         stats = serializer.data["stats"]
 
-        assert "comments" in stats
+        assert "replies" in stats
         assert "retweets" in stats
         assert "likes" in stats
         assert "views" in stats

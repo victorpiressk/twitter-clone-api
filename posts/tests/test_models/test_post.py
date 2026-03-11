@@ -2,7 +2,7 @@ from django.contrib.auth import get_user_model
 
 import pytest
 
-from posts.models import Comment, Like, Post
+from posts.models import Like, Post
 
 User = get_user_model()
 
@@ -153,18 +153,15 @@ class TestPostModel:
 
         assert post.likes_count == 2
 
-    def test_post_comments_count(self):
-        """Testa contagem de comentários."""
+    def test_post_replies_count(self):
+        """Testa contagem de replies."""
         user = User.objects.create_user(username="author", password="pass123")
-        user2 = User.objects.create_user(username="commenter", password="pass123")
-
+        user2 = User.objects.create_user(username="replier", password="pass123")
         post = Post.objects.create(author=user, content="Test")
-
-        Comment.objects.create(user=user2, post=post, content="Comment 1")
-        Comment.objects.create(user=user2, post=post, content="Comment 2")
-        Comment.objects.create(user=user2, post=post, content="Comment 3")
-
-        assert post.comments_count == 3
+        Post.objects.create(author=user2, content="Reply 1", in_reply_to=post)
+        Post.objects.create(author=user2, content="Reply 2", in_reply_to=post)
+        Post.objects.create(author=user2, content="Reply 3", in_reply_to=post)
+        assert post.replies_count == 3
 
     def test_post_content_max_length(self):
         """Testa limite de caracteres do conteúdo."""

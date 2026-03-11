@@ -7,7 +7,7 @@ import pytest
 from PIL import Image
 from rest_framework.test import APIRequestFactory
 
-from posts.models import Comment, Like, Post
+from posts.models import Like, Post
 from posts.serializers import PostCreateSerializer, PostSerializer
 
 User = get_user_model()
@@ -40,7 +40,7 @@ class TestPostSerializer:
 
         assert "stats" in data
         assert isinstance(data["stats"], dict)
-        assert data["stats"]["comments"] == 0
+        assert data["stats"]["replies"] == 0
         assert data["stats"]["retweets"] == 0
         assert data["stats"]["likes"] == 0
         assert data["stats"]["views"] == 0
@@ -53,18 +53,18 @@ class TestPostSerializer:
 
         post = Post.objects.create(author=author, content="Test")
 
-        # Criar likes e comments
+        # Criar likes e replies
         Like.objects.create(user=user2, post=post)
         Like.objects.create(user=user3, post=post)
-        Comment.objects.create(user=user2, post=post, content="Comment 1")
-        Comment.objects.create(user=user3, post=post, content="Comment 2")
-        Comment.objects.create(user=user3, post=post, content="Comment 3")
+        Post.objects.create(author=user2, content="Reply 1", in_reply_to=post)
+        Post.objects.create(author=user3, content="Reply 2", in_reply_to=post)
+        Post.objects.create(author=user3, content="Reply 3", in_reply_to=post)
 
         serializer = PostSerializer(post)
         data = serializer.data
 
         assert data["stats"]["likes"] == 2
-        assert data["stats"]["comments"] == 3
+        assert data["stats"]["replies"] == 3
 
     # TESTES - Retweets
     def test_serialize_retweet(self):

@@ -1,10 +1,9 @@
 """
 Posts models package.
 
-Expõe os models Post, Comment e Like.
+Expõe os models Post e Like.
 """
 
-from .comment import Comment
 from .hashtag import Hashtag
 from .like import Like
 from .location import Location
@@ -16,7 +15,6 @@ from .post import Post, PostManager
 __all__ = [
     "Post",
     "PostManager",
-    "Comment",
     "Like",
     "PostMedia",
     "Poll",
