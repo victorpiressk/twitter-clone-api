@@ -27,6 +27,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         fields = [
             "username",
             "email",
+            "phone",
             "password",
             "password_confirm",
             "first_name",
@@ -52,8 +53,13 @@ class RegisterSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 {"password_confirm": "As senhas não coincidem."}
             )
+        # Exige email ou phone
+        if not data.get("email") and not data.get("phone"):
+            raise serializers.ValidationError(
+                {"contact": "Email ou telefone é obrigatório."}
+            )
         return data
-    
+        
     def validate_birth_date(self, value):
         today = date.today()
         age = (

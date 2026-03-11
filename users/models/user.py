@@ -22,6 +22,14 @@ class User(AbstractUser):
     """
 
     # Campos adicionais
+    phone = models.CharField(
+        max_length=20,
+        blank=True,
+        null=True,
+        unique=True,
+        verbose_name="Telefone",
+    )
+    
     bio = models.TextField(
         max_length=160,
         blank=True,
