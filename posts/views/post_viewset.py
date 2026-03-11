@@ -167,6 +167,33 @@ class PostViewSet(viewsets.ModelViewSet):
                 | models.Q(scheduled_for__lte=timezone.now())
             )
 
+        author = self.request.query_params.get("author")
+        has_media = self.request.query_params.get("has_media")
+        has_reply = self.request.query_params.get("has_reply")
+        is_retweet = self.request.query_params.get("is_retweet")
+        liked_by = self.request.query_params.get("liked_by")
+
+        if author:
+            queryset = queryset.filter(author__id=author)
+        if has_media == "true":
+            queryset = queryset.filter(media__isnull=False).distinct()
+        if has_media == "false":
+            queryset = queryset.filter(media__isnull=True)
+        if has_reply == "true":
+            queryset = queryset.filter(in_reply_to__isnull=False)
+        if has_reply == "false":
+            queryset = queryset.filter(in_reply_to__isnull=True)
+        if is_retweet == "true":
+            queryset = queryset.filter(is_retweet=True)
+        if is_retweet == "false":
+            queryset = queryset.filter(is_retweet=False)
+        if liked_by:
+            from posts.models import Like
+            liked_post_ids = Like.objects.filter(
+                user__id=liked_by
+            ).values_list("post_id", flat=True)
+            queryset = queryset.filter(id__in=liked_post_ids)
+
         return queryset
 
     def retrieve(self, request, *args, **kwargs):
