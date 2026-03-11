@@ -66,6 +66,50 @@ class TestPostSerializer:
         assert data["stats"]["likes"] == 2
         assert data["stats"]["replies"] == 3
 
+    def test_is_liked_false_without_auth(self):
+        """Testa que is_liked retorna False sem usuário autenticado."""
+        author = User.objects.create_user(username="author", password="pass123")
+        post = Post.objects.create(author=author, content="Test")
+
+        serializer = PostSerializer(post)
+        data = serializer.data
+
+        assert data["is_liked"] is False
+        assert data["like_id"] is None
+
+    def test_is_liked_true(self):
+        """Testa que is_liked retorna True se usuário curtiu."""
+        author = User.objects.create_user(username="author", password="pass123")
+        user = User.objects.create_user(username="user", password="pass123")
+        post = Post.objects.create(author=author, content="Test")
+        like = Like.objects.create(user=user, post=post)
+
+        factory = APIRequestFactory()
+        request = factory.get("/")
+        request.user = user
+
+        serializer = PostSerializer(post, context={"request": request})
+        data = serializer.data
+
+        assert data["is_liked"] is True
+        assert data["like_id"] == like.id
+
+    def test_is_liked_false(self):
+        """Testa que is_liked retorna False se usuário não curtiu."""
+        author = User.objects.create_user(username="author", password="pass123")
+        user = User.objects.create_user(username="user", password="pass123")
+        post = Post.objects.create(author=author, content="Test")
+
+        factory = APIRequestFactory()
+        request = factory.get("/")
+        request.user = user
+
+        serializer = PostSerializer(post, context={"request": request})
+        data = serializer.data
+
+        assert data["is_liked"] is False
+        assert data["like_id"] is None
+
     # TESTES - Retweets
     def test_serialize_retweet(self):
         """Testa serialização de retweet."""
