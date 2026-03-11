@@ -53,6 +53,7 @@ Authorization: Token <seu_token_aqui>
 {
   "username": "novouser",
   "email": "novo@example.com",
+  "phone": "11999999999",
   "password": "senha12345",
   "password_confirm": "senha12345",
   "first_name": "Novo",
@@ -60,6 +61,8 @@ Authorization: Token <seu_token_aqui>
   "birth_date": "1995-06-15"
 }
 ```
+
+**Nota:** `email` e `phone` são opcionais individualmente, mas pelo menos um dos dois deve ser fornecido.
 
 **Resposta (201 Created):**
 ```json
@@ -88,7 +91,7 @@ Authorization: Token <seu_token_aqui>
 ```
 
 **Erros Possíveis:**
-- `400 Bad Request` - Senhas não coincidem, username/email já existe, campos obrigatórios faltando, idade menor que 13 anos, data de nascimento no futuro
+- `400 Bad Request` - Senhas não coincidem, username/email/phone já existe, campos obrigatórios faltando, idade menor que 13 anos, data de nascimento no futuro, email e phone ausentes simultaneamente
 
 ---
 
@@ -101,7 +104,7 @@ Authorization: Token <seu_token_aqui>
 **Body:**
 ```json
 {
-  "username": "novouser",
+  "identifier": "nome_de_usuario, email ou telefone",
   "password": "senha12345"
 }
 ```
@@ -120,7 +123,7 @@ Authorization: Token <seu_token_aqui>
     "banner": null,
     "location": "",
     "website": "",
-    "birth_date": null,
+    "birth_date": "1995-06-15",
     "stats": {
       "posts": 0,
       "following": 0,
@@ -133,7 +136,7 @@ Authorization: Token <seu_token_aqui>
 ```
 
 **Erros Possíveis:**
-- `400 Bad Request` - Credenciais inválidas
+- `400 Bad Request` - Credenciais inválidas, identifier ou senha ausentes
 
 ---
 
