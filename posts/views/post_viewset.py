@@ -4,6 +4,7 @@ Post ViewSet.
 
 from django.db import models, transaction
 from django.utils import timezone
+from datetime import timedelta
 
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
@@ -226,14 +227,14 @@ class PostViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=["post"], permission_classes=[IsAuthenticated])
     def retweet(self, request, pk=None):
-        """
-        Retweeta um post (retweet simples, sem comentário).
-        """
         original_post = self.get_object()
 
-        # Verificar se já retweetou
+        # Verifica apenas retweet simples (content="")
         already_retweeted = Post.objects.filter(
-            author=request.user, is_retweet=True, retweet_of=original_post
+            author=request.user,
+            is_retweet=True,
+            retweet_of=original_post,
+            content=""
         ).exists()
 
         if already_retweeted:
@@ -242,7 +243,6 @@ class PostViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Criar retweet e incrementar contador atomicamente
         with transaction.atomic():
             retweet = Post.objects.create(
                 author=request.user,
@@ -250,13 +250,12 @@ class PostViewSet(viewsets.ModelViewSet):
                 is_retweet=True,
                 retweet_of=original_post,
             )
-
-            # Incrementar contador do post original
             original_post.retweets_count += 1
             original_post.save(update_fields=["retweets_count"])
 
         serializer = self.get_serializer(retweet)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
 
     @action(detail=True, methods=["post"], permission_classes=[IsAuthenticated])
     def quote_retweet(self, request, pk=None):
@@ -295,30 +294,28 @@ class PostViewSet(viewsets.ModelViewSet):
 
         serializer = self.get_serializer(quote_retweet)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+    
 
     @action(detail=True, methods=["delete"], permission_classes=[IsAuthenticated])
     def unretweet(self, request, pk=None):
-        """
-        Desfaz retweet de um post.
-        """
         original_post = self.get_object()
 
-        # Buscar retweet do usuário
-        try:
-            retweet = Post.objects.get(
-                author=request.user, is_retweet=True, retweet_of=original_post
-            )
-        except Post.DoesNotExist:
+        # Busca apenas retweet simples (content="")
+        retweet = Post.objects.filter(
+            author=request.user,
+            is_retweet=True,
+            retweet_of=original_post,
+            content=""
+        ).first()
+
+        if not retweet:
             return Response(
                 {"detail": "Você não retweetou este post."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Deletar retweet e decrementar contador atomicamente
         with transaction.atomic():
             retweet.delete()
-
-            # Decrementar contador (garantir que não fique negativo)
             if original_post.retweets_count > 0:
                 original_post.retweets_count -= 1
                 original_post.save(update_fields=["retweets_count"])
@@ -374,9 +371,7 @@ class PostViewSet(viewsets.ModelViewSet):
         - limit: número de posts (padrão: 10, máximo: 50)
         - period: período (today, week, month, all - padrão: all)
         """
-        from datetime import timedelta
-
-        from django.utils import timezone
+        
 
         # Pegar limite (padrão 10, máximo 50)
         limit = int(request.query_params.get("limit", 10))
