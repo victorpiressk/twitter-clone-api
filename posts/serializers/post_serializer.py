@@ -38,11 +38,16 @@ class PostMediaSerializer(serializers.ModelSerializer):
 
     def get_url(self, obj):
         """Retorna URL completa do arquivo."""
-        request = self.context.get("request")
         if obj.file and hasattr(obj.file, "url"):
+            url = obj.file.url
+            # Se já é URL absoluta (Cloudinary), retorna diretamente
+            if url.startswith("http"):
+                return url
+            # Se é URL relativa (local), constrói URL absoluta
+            request = self.context.get("request")
             if request:
-                return request.build_absolute_uri(obj.file.url)
-            return obj.file.url
+                return request.build_absolute_uri(url)
+            return url
         return None
 
 
