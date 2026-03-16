@@ -213,7 +213,12 @@ class PostCreateSerializer(serializers.ModelSerializer):
             # Verificar tipo de arquivo
             content_type = file.content_type
 
-            if content_type.startswith("image/"):
+            if content_type.startswith("image/gif"):
+                if file.size > 15 * 1024 * 1024:  # 15MB para GIFs
+                    raise serializers.ValidationError(
+                        "GIF muito grande. Tamanho máximo: 15MB"
+                    )
+            elif content_type.startswith("image/"):
                 if file.size > max_size_image:
                     raise serializers.ValidationError(
                         "Imagem muito grande. Tamanho máximo: 5MB"
@@ -247,13 +252,7 @@ class PostCreateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         """Cria post com mídias e location associadas se fornecida."""
-        import logging
-        logger = logging.getLogger(__name__)
-        
-        from django.core.files.storage import default_storage
-        logger.warning(f"[STORAGE] default_storage: {default_storage.__class__.__name__}")
-        logger.warning(f"[STORAGE] backend: {default_storage.__class__.__module__}")
-        
+
         location_data = validated_data.pop("location", None)
         media_files = validated_data.pop("media_files", [])
         scheduled_for = validated_data.pop("scheduled_for", None)
