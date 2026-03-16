@@ -189,6 +189,9 @@ STORAGES = {
 # Necessário para compatibilidade com django-cloudinary-storage 0.3.0
 STATICFILES_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"  # compatibilidade
 
+# Whitenoise serve os arquivos estáticos via middleware sem post-processing
+WHITENOISE_AUTOREFRESH = True
+
 # CORS Configuration (permitir frontend acessar a API)
 CORS_ALLOWED_ORIGINS = os.environ.get(
     "CORS_ALLOWED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173"
