@@ -71,13 +71,6 @@ class UserSerializer(serializers.ModelSerializer):
             self._validate_image(value, max_size_mb=5)
         return value
 
-    def validate_profile_image(self, value):
-        if value:
-            self._validate_image(
-                value, max_size_mb=2
-            )  # Ex: Limite diferente para avatar
-        return value
-
     def validate_website(self, value):
         """Valida formato da URL do website."""
         if value and not value.startswith(("http://", "https://")):
