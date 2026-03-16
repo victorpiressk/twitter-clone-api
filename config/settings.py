@@ -176,7 +176,7 @@ CLOUDINARY_STORAGE = {
     "API_SECRET": os.environ.get("CLOUDINARY_API_SECRET"),
 }
 
-# Storage — Django 4.2+ usa STORAGES em vez de DEFAULT_FILE_STORAGE/STATICFILES_STORAGE
+# Storage — Django 4.2+ usa STORAGES
 STORAGES = {
     "default": {
         "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
@@ -185,6 +185,9 @@ STORAGES = {
         "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
     },
 }
+
+# Necessário para compatibilidade com django-cloudinary-storage 0.3.0
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 # CORS Configuration (permitir frontend acessar a API)
 CORS_ALLOWED_ORIGINS = os.environ.get(
