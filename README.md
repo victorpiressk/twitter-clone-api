@@ -311,7 +311,7 @@ O deploy da aplicação é feito **sem Docker**, utilizando execução direta do
 
 **Build Command:**
 ```bash
-poetry install --no-root && python manage.py collectstatic --noinput && python manage.py migrate
+poetry install --no-root && python manage.py collectstatic --noinput --upload-unhashed-files && python manage.py migrate
 ```
 
 **Start Command:**
