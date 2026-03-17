@@ -57,7 +57,7 @@ INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
-    "cloudinary_storage",  # deve vir antes do staticfiles
+    "cloudinary_storage",
     "django.contrib.staticfiles",
     # Third party apps
     "rest_framework",
@@ -176,22 +176,16 @@ CLOUDINARY_STORAGE = {
     "API_SECRET": os.environ.get("CLOUDINARY_API_SECRET"),
 }
 
-# Storage — Django 4.2+ usa STORAGES
 STORAGES = {
     "default": {
         "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
     },
     "staticfiles": {
-        "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
     },
 }
 
-# Necessário para compatibilidade com django-cloudinary-storage 0.3.0
-STATICFILES_STORAGE = "whitenoise.storage.CompressedStaticFilesStorage"
-
-WHITENOISE_SKIP_COMPRESS_EXTENSIONS = [
-    "map", "eot", "ttf", "woff", "woff2"
-]
+STATICFILES_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
 
 # CORS Configuration (permitir frontend acessar a API)
 CORS_ALLOWED_ORIGINS = os.environ.get(
