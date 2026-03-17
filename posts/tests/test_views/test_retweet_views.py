@@ -175,9 +175,7 @@ class TestRetweetViewSet:
         post = Post.objects.create(author=another_user, content="Original")
 
         # Retweet simples já existe
-        Post.objects.create(
-            author=user, content="", is_retweet=True, retweet_of=post
-        )
+        Post.objects.create(author=user, content="", is_retweet=True, retweet_of=post)
 
         url = reverse("post-retweet", kwargs={"pk": post.pk})
         response = authenticated_client.post(url)
@@ -201,9 +199,10 @@ class TestRetweetViewSet:
 
         assert response1.status_code == status.HTTP_201_CREATED
         assert response2.status_code == status.HTTP_201_CREATED
-        assert Post.objects.filter(
-            author=user, is_retweet=True, retweet_of=post
-        ).count() == 2
+        assert (
+            Post.objects.filter(author=user, is_retweet=True, retweet_of=post).count()
+            == 2
+        )
 
     def test_unretweet_only_removes_simple_retweet(
         self, authenticated_client, user, another_user
@@ -217,9 +216,7 @@ class TestRetweetViewSet:
         Post.objects.create(
             author=user, content="Meu comentário", is_retweet=True, retweet_of=post
         )
-        Post.objects.create(
-            author=user, content="", is_retweet=True, retweet_of=post
-        )
+        Post.objects.create(author=user, content="", is_retweet=True, retweet_of=post)
 
         url = reverse("post-unretweet", kwargs={"pk": post.pk})
         response = authenticated_client.delete(url)

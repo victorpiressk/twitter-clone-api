@@ -113,6 +113,7 @@ class TestRegisterView:
     def test_register_underage_birth_date(self, api_client, user_data):
         """Testa registro com idade menor que 13 anos → erro 400."""
         from datetime import date, timedelta
+
         underage = date.today() - timedelta(days=365 * 10)  # 10 anos
         user_data["birth_date"] = underage.isoformat()
         url = reverse("auth-register")
@@ -124,6 +125,7 @@ class TestRegisterView:
     def test_register_future_birth_date(self, api_client, user_data):
         """Testa registro com data de nascimento no futuro → erro 400."""
         from datetime import date, timedelta
+
         future = date.today() + timedelta(days=365)
         user_data["birth_date"] = future.isoformat()
         url = reverse("auth-register")
@@ -144,7 +146,7 @@ class TestLoginView:
             username="testuser",
             email="test@example.com",
             password="testpass123",
-            phone="11999999999"
+            phone="11999999999",
         )
 
     def test_login_success_with_username(self, api_client, existing_user):
@@ -163,7 +165,9 @@ class TestLoginView:
         """Testa login com email válido."""
         url = reverse("auth-login")
         response = api_client.post(
-            url, {"identifier": "test@example.com", "password": "testpass123"}, format="json"
+            url,
+            {"identifier": "test@example.com", "password": "testpass123"},
+            format="json",
         )
 
         assert response.status_code == status.HTTP_200_OK

@@ -29,7 +29,7 @@ class User(AbstractUser):
         unique=True,
         verbose_name="Telefone",
     )
-    
+
     bio = models.TextField(
         max_length=160,
         blank=True,

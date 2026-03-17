@@ -4,7 +4,6 @@ User serializers.
 
 from datetime import date
 
-from PIL import Image
 from rest_framework import serializers
 
 from users.models import User
@@ -58,7 +57,7 @@ class UserSerializer(serializers.ModelSerializer):
         content_type = getattr(image_file, "content_type", "")
         if content_type and content_type not in allowed_content_types:
             raise serializers.ValidationError(
-                f"Formato não aceito. Use JPEG, PNG ou WEBP."
+                "Formato não aceito. Use JPEG, PNG ou WEBP."
             )
 
     def validate_profile_image(self, value):

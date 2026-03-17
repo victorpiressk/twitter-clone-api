@@ -207,7 +207,9 @@ class TestPostViewSet:
             assert len(response.data["results"]) == 1
             assert response.data["results"][0]["content"] == "Post curtido"
 
-        def test_filter_combined_author_and_no_reply(self, api_client, user, another_user):
+        def test_filter_combined_author_and_no_reply(
+            self, api_client, user, another_user
+        ):
             """Testa filtro combinado: posts de um autor sem replies."""
             original = Post.objects.create(author=another_user, content="Original")
             Post.objects.create(

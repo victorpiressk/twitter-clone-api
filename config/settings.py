@@ -57,7 +57,7 @@ INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
-    "cloudinary_storage",           # deve vir antes do staticfiles
+    "cloudinary_storage",  # deve vir antes do staticfiles
     "django.contrib.staticfiles",
     # Third party apps
     "rest_framework",
@@ -187,7 +187,9 @@ STORAGES = {
 }
 
 # Necessário para compatibilidade com django-cloudinary-storage 0.3.0
-STATICFILES_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"  # compatibilidade
+STATICFILES_STORAGE = (
+    "django.contrib.staticfiles.storage.StaticFilesStorage"  # compatibilidade
+)
 
 # Whitenoise serve os arquivos estáticos via middleware sem post-processing
 WHITENOISE_AUTOREFRESH = True

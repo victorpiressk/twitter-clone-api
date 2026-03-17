@@ -2,8 +2,6 @@
 Login serializer.
 """
 
-from django.contrib.auth import authenticate
-
 from rest_framework import serializers
 
 
@@ -21,19 +19,16 @@ class LoginSerializer(serializers.Serializer):
         password = data.get("password")
 
         if not identifier or not password:
-            raise serializers.ValidationError(
-                "Identificador e senha são obrigatórios."
-            )
+            raise serializers.ValidationError("Identificador e senha são obrigatórios.")
 
         # Detecta tipo e busca usuário
-        from django.db.models import Q
         from django.contrib.auth import get_user_model
+        from django.db.models import Q
+
         User = get_user_model()
 
         user = User.objects.filter(
-            Q(username=identifier) |
-            Q(email=identifier) |
-            Q(phone=identifier)
+            Q(username=identifier) | Q(email=identifier) | Q(phone=identifier)
         ).first()
 
         if not user or not user.check_password(password):
@@ -42,9 +37,7 @@ class LoginSerializer(serializers.Serializer):
             )
 
         if not user.is_active:
-            raise serializers.ValidationError(
-                "Conta desativada.", code="authorization"
-            )
+            raise serializers.ValidationError("Conta desativada.", code="authorization")
 
         data["user"] = user
         return data

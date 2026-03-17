@@ -47,3 +47,19 @@ def another_user(db):
 def authenticated_client(api_client, user):
     api_client.force_authenticate(user=user)
     return api_client
+
+
+@pytest.fixture(autouse=True)
+def use_local_storage(settings):
+    """
+    Força uso do FileSystemStorage durante testes.
+    Evita chamadas ao Cloudinary que exigem credenciais reais.
+    """
+    settings.STORAGES = {
+        "default": {
+            "BACKEND": "django.core.files.storage.FileSystemStorage",
+        },
+        "staticfiles": {
+            "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+        },
+    }

@@ -2,9 +2,10 @@
 Post ViewSet.
 """
 
+from datetime import timedelta
+
 from django.db import models, transaction
 from django.utils import timezone
-from datetime import timedelta
 
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
@@ -189,9 +190,10 @@ class PostViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(is_retweet=False)
         if liked_by:
             from posts.models import Like
-            liked_post_ids = Like.objects.filter(
-                user__id=liked_by
-            ).values_list("post_id", flat=True)
+
+            liked_post_ids = Like.objects.filter(user__id=liked_by).values_list(
+                "post_id", flat=True
+            )
             queryset = queryset.filter(id__in=liked_post_ids)
 
         return queryset
@@ -258,10 +260,7 @@ class PostViewSet(viewsets.ModelViewSet):
 
         # Verifica apenas retweet simples (content="")
         already_retweeted = Post.objects.filter(
-            author=request.user,
-            is_retweet=True,
-            retweet_of=original_post,
-            content=""
+            author=request.user, is_retweet=True, retweet_of=original_post, content=""
         ).exists()
 
         if already_retweeted:
@@ -282,7 +281,6 @@ class PostViewSet(viewsets.ModelViewSet):
 
         serializer = self.get_serializer(retweet)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
-
 
     @action(detail=True, methods=["post"], permission_classes=[IsAuthenticated])
     def quote_retweet(self, request, pk=None):
@@ -321,7 +319,6 @@ class PostViewSet(viewsets.ModelViewSet):
 
         serializer = self.get_serializer(quote_retweet)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
-    
 
     @action(detail=True, methods=["delete"], permission_classes=[IsAuthenticated])
     def unretweet(self, request, pk=None):
@@ -329,10 +326,7 @@ class PostViewSet(viewsets.ModelViewSet):
 
         # Busca apenas retweet simples (content="")
         retweet = Post.objects.filter(
-            author=request.user,
-            is_retweet=True,
-            retweet_of=original_post,
-            content=""
+            author=request.user, is_retweet=True, retweet_of=original_post, content=""
         ).first()
 
         if not retweet:
@@ -398,7 +392,6 @@ class PostViewSet(viewsets.ModelViewSet):
         - limit: número de posts (padrão: 10, máximo: 50)
         - period: período (today, week, month, all - padrão: all)
         """
-        
 
         # Pegar limite (padrão 10, máximo 50)
         limit = int(request.query_params.get("limit", 10))

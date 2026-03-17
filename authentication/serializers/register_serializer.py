@@ -3,6 +3,7 @@ Register serializer.
 """
 
 from datetime import date
+
 from rest_framework import serializers
 
 from users.models import User
@@ -59,7 +60,7 @@ class RegisterSerializer(serializers.ModelSerializer):
                 {"contact": "Email ou telefone é obrigatório."}
             )
         return data
-        
+
     def validate_birth_date(self, value):
         today = date.today()
         age = (
