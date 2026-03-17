@@ -3,7 +3,7 @@
 ![Build Status](https://github.com/victorpiressk/twitter-clone-api/workflows/Backend%20CI/badge.svg)
 ![Code Quality](https://img.shields.io/badge/code%20style-black-000000.svg)
 ![Coverage](https://img.shields.io/badge/coverage-99%25-brightgreen)
-![Tests](https://img.shields.io/badge/tests-404%20passing-success)
+![Tests](https://img.shields.io/badge/tests-414%20passing-success)
 ![Python](https://img.shields.io/badge/python-3.14.0-blue)
 ![Django](https://img.shields.io/badge/django-6.0-green)
 
@@ -19,8 +19,9 @@ API REST completa desenvolvida com Django e Django REST Framework para uma rede 
 - **Poetry 2.2.1** (gerenciamento de dependências)
 - **PostgreSQL 14** (desenvolvimento e produção)
 - **Celery + Redis** (processamento assíncrono e agendamento)
+- **Cloudinary** (armazenamento de mídia em produção)
 - **Token Authentication** (DRF)
-- **Pytest / Pytest-Django** (404 testes, 99% cobertura)
+- **Pytest / Pytest-Django** (414 testes, 99% cobertura)
 - **Docker & Docker Compose** (desenvolvimento cross-platform)
 - **Black, Isort, Flake8** (qualidade de código)
 - **GitHub Actions** (CI/CD)
@@ -32,16 +33,17 @@ API REST completa desenvolvida com Django e Django REST Framework para uma rede 
 
 ### Core Features
 - ✅ Autenticação com Token (registro, login, logout)
+- ✅ Login com username, email ou telefone
 - ✅ Gerenciamento de usuários e perfis completos
 - ✅ Sistema de posts (criar, editar, listar, deletar)
-- ✅ Curtidas e comentários
+- ✅ Curtidas com persistência de estado
 - ✅ Sistema de seguir/seguidores
 - ✅ Feed personalizado
 
 ### Advanced Features
-- ✅ **Retweets e Quote Retweets** - Compartilhe posts com ou sem comentário
+- ✅ **Retweets e Quote Retweets** - Retweet simples e quote retweet independentes
 - ✅ **Replies (Respostas)** - Threads de conversação completas
-- ✅ **Múltiplas Mídias** - Até 4 imagens ou vídeos por post
+- ✅ **Múltiplas Mídias** - Até 4 arquivos por post (imagens, GIFs, vídeos)
 - ✅ **Polls (Enquetes)** - Crie votações com 2-4 opções
 - ✅ **Geolocalização** - Marque localização em posts
 - ✅ **Posts Agendados** - Agende publicações futuras (Celery + Redis)
@@ -49,11 +51,13 @@ API REST completa desenvolvida com Django e Django REST Framework para uma rede 
 - ✅ **Hashtags Automáticas** - Extração e indexação de hashtags
 - ✅ **Notificações** - Sistema completo (likes, retweets, replies, follows, mentions)
 - ✅ **Busca Avançada** - Busca global em posts, usuários e hashtags
+- ✅ **Filtros Dinâmicos** - Filtrar posts por autor, mídia, replies, retweets e curtidas
+- ✅ **Cloudinary** - Armazenamento persistente de mídia em produção
 
 ### Quality & DevOps
-- ✅ **404 testes automatizados** (99% cobertura)
+- ✅ **414 testes automatizados** (99% cobertura)
 - ✅ Pipeline de CI/CD com validação de qualidade
-- ✅ Documentação completa de 52 endpoints
+- ✅ Documentação completa de 47 endpoints
 
 ---
 
@@ -67,56 +71,40 @@ twitter-clone-api/
 │   ├── wsgi.py
 │   └── celery.py             # Configuração Celery
 ├── authentication/            # Sistema de autenticação
-│   ├── serializers/
-│   ├── views/
+│   ├── serializers/          # 2 serializers
+│   ├── views/                # 3 views
 │   ├── tests/
 │   └── urls.py
 ├── users/                     # Usuários, perfis e follows
-│   ├── models/
-│   │   ├── user.py           # User customizado
-│   │   └── follow.py
-│   ├── serializers/
-│   │   ├── user_serializer.py
-│   │   └── follow_serializer.py
-│   ├── views/
+│   ├── models/               # 2 models (user, follow)
+│   ├── serializers/          # 2 serializers
+│   ├── views/                # 2 views
 │   ├── permissions/
 │   ├── tests/
 │   └── urls.py
 ├── posts/                     # Posts e features relacionadas
-│   ├── models/
+│   ├── models/               # 7 models
 │   │   ├── post.py           # Post com retweets, replies, agendamento
-│   │   ├── comment.py
 │   │   ├── like.py
 │   │   ├── postmedia.py      # Múltiplas mídias
 │   │   ├── poll.py           # Polls completas
 │   │   ├── location.py       # Geolocalização
 │   │   ├── hashtag.py        # Sistema de hashtags
 │   │   └── notification.py   # Notificações
-│   ├── serializers/          # 10+ serializers organizados
-│   │   ├── post_serializer.py
-│   │   ├── comment_serializer.py
-│   │   ├── like_serializer.py
-│   │   ├── postmedia_serializer.py
-│   │   ├── poll_serializer.py
-│   │   ├── location_serializer.py
-│   │   ├── hashtag_serializer.py
-│   │   ├── notification_serializer.py
-│   │   └── ...
-│   ├── views/                # 14+ viewsets organizados
+│   ├── serializers/          # 6 serializers
+│   ├── views/                # 7 viewsets
 │   │   ├── post_views.py
-│   │   ├── comment_views.py
 │   │   ├── like_views.py
 │   │   ├── retweet_views.py
 │   │   ├── poll_views.py
 │   │   ├── location_views.py
 │   │   ├── hashtag_views.py
 │   │   ├── notification_views.py
-│   │   ├── search_views.py
-│   │   └── ...
-│   ├── tests/                # 345 testes organizados
-│   │   ├── test_models/      # 10 arquivos
-│   │   ├── test_serializers/ # 10 arquivos
-│   │   ├── test_views/       # 14 arquivos
+│   │   └── search_views.py
+│   ├── tests/                # 414 testes organizados
+│   │   ├── test_models/
+│   │   ├── test_serializers/
+│   │   ├── test_views/
 │   │   └── conftest.py
 │   ├── signals.py            # Notificações automáticas
 │   ├── utils.py              # Extração de hashtags
@@ -130,7 +118,7 @@ twitter-clone-api/
 ├── Makefile                   # Comandos úteis
 ├── pyproject.toml             # Dependências Poetry
 ├── .env.example               # Template de variáveis de ambiente
-├── API_ENDPOINTS.md           # Documentação detalhada (52 endpoints)
+├── API_ENDPOINTS.md           # Documentação detalhada (47 endpoints)
 ├── README_DOCKER.md           # Documentação do Docker + Celery
 └── manage.py
 ```
@@ -196,7 +184,7 @@ Este projeto utiliza Docker **para desenvolvimento local**, garantindo ambiente 
 
 ```bash
 # 1. Build e iniciar todos os containers
-docker-compose up -d
+docker-compose up -d --build
 
 # 2. Executar migrations
 docker-compose exec backend python manage.py migrate
@@ -228,7 +216,7 @@ Para instruções detalhadas sobre Docker, Celery, comandos úteis e troubleshoo
 
 ## 📡 Documentação da API
 
-A documentação detalhada de **todos os 52 endpoints** da API está disponível em arquivo dedicado:
+A documentação detalhada de **todos os 47 endpoints** da API está disponível em arquivo dedicado:
 
 👉 **[API_ENDPOINTS.md](./API_ENDPOINTS.md)**
 
@@ -255,7 +243,6 @@ A documentação detalhada de **todos os 52 endpoints** da API está disponível
 - Hashtags (5 endpoints)
 - Notificações (5 endpoints)
 - Busca (1 endpoint)
-- Comentários (4 endpoints)
 - Curtidas (3 endpoints)
 
 ---
@@ -296,12 +283,21 @@ CELERY_BROKER_URL=redis://redis:6379/0
 CELERY_RESULT_BACKEND=redis://redis:6379/0
 
 # CORS
-CORS_ALLOWED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
+CORS_ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
 ```
 
 ### Produção
 
 Em produção (Render), as variáveis devem ser configuradas diretamente no painel do provedor, **sem uso de arquivo `.env`**.
+
+**Variáveis adicionais obrigatórias em produção:**
+
+```env
+# Cloudinary (armazenamento de mídia)
+CLOUDINARY_CLOUD_NAME=seu_cloud_name
+CLOUDINARY_API_KEY=sua_api_key
+CLOUDINARY_API_SECRET=seu_api_secret
+```
 
 ---
 
@@ -315,7 +311,7 @@ O deploy da aplicação é feito **sem Docker**, utilizando execução direta do
 
 **Build Command:**
 ```bash
-poetry install --no-root && python manage.py collectstatic --noinput && python manage.py migrate
+poetry install --no-root && python manage.py collectstatic --noinput --upload-unhashed-files && python manage.py migrate
 ```
 
 **Start Command:**
@@ -355,26 +351,32 @@ SQL_PASSWORD=<senha>
 SQL_HOST=<host-interno-do-render>
 SQL_PORT=5432
 
-# Redis (Render Redis addon ou externo)
+# Redis
 REDIS_URL=redis://<host-redis>:6379/0
 CELERY_BROKER_URL=redis://<host-redis>:6379/0
 CELERY_RESULT_BACKEND=redis://<host-redis>:6379/0
 
 # CORS
 CORS_ALLOWED_ORIGINS=https://seu-frontend.vercel.app
+
+# Cloudinary (obrigatório para mídia em produção)
+CLOUDINARY_CLOUD_NAME=seu_cloud_name
+CLOUDINARY_API_KEY=sua_api_key
+CLOUDINARY_API_SECRET=seu_api_secret
 ```
 
 #### 5. Criar Serviços Necessários
 
 - **PostgreSQL Database:** No Render, crie um PostgreSQL 14 database
 - **Redis:** Adicione Redis addon do Render ou use serviço externo
+- **Cloudinary:** Crie conta em [cloudinary.com](https://cloudinary.com) e obtenha as credenciais
 - Conecte todos os serviços (Web Service + Workers + Database + Redis)
 
 ---
 
 ## 🧪 Testes
 
-O projeto possui **404 testes automatizados** com **99% de cobertura**, organizados de forma modular.
+O projeto possui **414 testes automatizados** com **99% de cobertura**, organizados de forma modular.
 
 ### Executar Testes
 
@@ -396,38 +398,33 @@ poetry run pytest posts/tests/test_views/test_poll_views.py
 ### Com Docker
 
 ```bash
-# Rodar todos os testes
-docker-compose exec backend pytest
+# Rodar todos os testes (primeira execução ou após mudanças nos models)
+docker-compose exec backend pytest --create-db -v
+
+# Execuções subsequentes (reutiliza banco de teste existente)
+docker-compose exec backend pytest -v
 
 # Com cobertura
 docker-compose exec backend pytest --cov
 ```
 
+> **Nota:** Use `--create-db` sempre que houver mudanças nos models ou migrations, pois o pytest-django reutiliza o banco de teste por padrão.
+
 ### Estrutura de Testes
 
-**Total:** 404 testes
+**Total:** 414 testes
 
-- **Posts:** 345 testes
-  - Models: ~100 testes (post, media, poll, location, hashtag, notification)
-  - Serializers: ~80 testes
-  - Views: ~94 testes (CRUD, retweets, replies, polls, search, etc)
-  - Signals: ~15 testes (notificações automáticas)
-  - Utils: ~10 testes (extração de hashtags)
-  
-- **Users:** ~40 testes
-  - Models: user, follow
-  - Serializers e Views
-  
-- **Authentication:** ~19 testes
-  - Register, Login, Logout
+- **Posts:** testes de models, serializers, views, signals e utils
+- **Users:** testes de models, serializers e views
+- **Authentication:** testes de registro, login e logout
 
 **Organização modular:**
 ```
 posts/tests/
-├── test_models/         # 10 arquivos
-├── test_serializers/    # 10 arquivos
-├── test_views/          # 14 arquivos
-└── conftest.py          # Fixtures compartilhadas
+├── test_models/
+├── test_serializers/
+├── test_views/
+└── conftest.py       # Fixtures compartilhadas
 ```
 
 Os testes são executados **automaticamente no GitHub Actions** a cada push e pull request.
@@ -442,7 +439,7 @@ O projeto possui pipeline de CI/CD automatizado com dois workflows:
 
 #### **Build & Test (`build.yml`):**
 - ✅ Validação de código (Black, Isort, Flake8)
-- ✅ Execução de 404 testes com PostgreSQL
+- ✅ Execução de 414 testes com PostgreSQL
 - ✅ Relatório de cobertura (99%)
 - ✅ Build da imagem Docker para validação
 - ✅ Matrix testing (múltiplas versões Python/Django)
@@ -544,48 +541,21 @@ curl -X POST http://localhost:8000/api/auth/register/ \
     "password": "senha123",
     "password_confirm": "senha123",
     "first_name": "Novo",
-    "last_name": "Usuário"
+    "last_name": "Usuário",
+    "birth_date": "1995-06-15"
   }'
 ```
 
-**Resposta:**
-```json
-{
-  "user": {
-    "id": 1,
-    "username": "novouser",
-    "email": "user@example.com",
-    "first_name": "Novo",
-    "last_name": "Usuário",
-    "bio": "",
-    "profile_image": null,
-    "banner": null,
-    "location": "",
-    "website": "",
-    "birth_date": null,
-    "stats": {
-      "posts": 0,
-      "following": 0,
-      "followers": 0
-    },
-    "created_at": "2026-02-19T10:00:00Z"
-  },
-  "token": "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0"
-}
-```
-
-#### 2. **Login:**
+#### 2. **Login (username, email ou telefone):**
 
 ```bash
 curl -X POST http://localhost:8000/api/auth/login/ \
   -H "Content-Type: application/json" \
   -d '{
-    "username": "novouser",
+    "identifier": "novouser",
     "password": "senha123"
   }'
 ```
-
-**Resposta:** Mesma estrutura do registro
 
 #### 3. **Usar o token em requisições:**
 
@@ -601,13 +571,6 @@ curl -X POST http://localhost:8000/api/auth/logout/ \
   -H "Authorization: Token SEU_TOKEN_AQUI"
 ```
 
-**Resposta:**
-```json
-{
-  "detail": "Logout realizado com sucesso."
-}
-```
-
 ---
 
 ## 🗄️ Modelos de Dados
@@ -616,15 +579,16 @@ curl -X POST http://localhost:8000/api/auth/logout/ \
 
 ```python
 - username (unique)
-- email (unique)
+- email (unique, opcional)
+- phone (unique, opcional)        # login por telefone
 - first_name
 - last_name
 - bio (max 160 chars)
-- profile_image (upload, max 2MB)
-- banner (upload, max 5MB)          # ✨ NOVO
-- location (CharField, max 100)      # ✨ NOVO
-- website (URLField)                 # ✨ NOVO
-- birth_date (DateField)             # ✨ NOVO
+- profile_image (Cloudinary, max 5MB)
+- banner (Cloudinary, max 5MB)
+- location (CharField, max 100)
+- website (URLField)
+- birth_date (DateField, obrigatório, mín. 13 anos)
 - created_at
 - updated_at
 
@@ -639,36 +603,35 @@ curl -X POST http://localhost:8000/api/auth/logout/ \
 ```python
 - author (ForeignKey → User)
 - content (max 280 chars)
-- image (optional upload) [DEPRECATED]
-- is_retweet (Boolean)               # ✨ NOVO
-- retweet_of (ForeignKey → Post)     # ✨ NOVO
-- retweets_count (IntegerField)      # ✨ NOVO
-- in_reply_to (ForeignKey → Post)    # ✨ NOVO
-- scheduled_for (DateTimeField)      # ✨ NOVO
-- views_count (IntegerField)         # ✨ NOVO
-- location (ForeignKey → Location)   # ✨ NOVO
-- hashtags (ManyToMany → Hashtag)    # ✨ NOVO
+- is_retweet (Boolean)
+- retweet_of (ForeignKey → Post)
+- retweets_count (IntegerField)
+- in_reply_to (ForeignKey → Post)
+- scheduled_for (DateTimeField)
+- views_count (IntegerField)
+- location (ForeignKey → Location)
+- hashtags (ManyToMany → Hashtag)
 - created_at
 - updated_at
 
 # Properties computadas:
 - likes_count
-- comments_count
+- replies_count
 - is_published
 ```
 
-### PostMedia (✨ NOVO)
+### PostMedia
 
 ```python
 - post (ForeignKey → Post)
 - type (CharField: image, video, gif)
-- file (FileField)
+- file (FileField → Cloudinary em produção)
 - thumbnail (opcional)
 - order (IntegerField)
 - created_at
 ```
 
-### Poll (✨ NOVO)
+### Poll
 
 ```python
 - post (OneToOne → Post)
@@ -682,7 +645,7 @@ curl -X POST http://localhost:8000/api/auth/logout/ \
 - is_ended
 ```
 
-### PollOption (✨ NOVO)
+### PollOption
 
 ```python
 - poll (ForeignKey → Poll)
@@ -694,7 +657,7 @@ curl -X POST http://localhost:8000/api/auth/logout/ \
 - percentage
 ```
 
-### PollVote (✨ NOVO)
+### PollVote
 
 ```python
 - poll (ForeignKey → Poll)
@@ -705,7 +668,7 @@ curl -X POST http://localhost:8000/api/auth/logout/ \
 # unique_together: (poll, user)
 ```
 
-### Location (✨ NOVO)
+### Location
 
 ```python
 - name (CharField, max 200)
@@ -718,7 +681,7 @@ curl -X POST http://localhost:8000/api/auth/logout/ \
 - has_coordinates
 ```
 
-### Hashtag (✨ NOVO)
+### Hashtag
 
 ```python
 - name (CharField, unique)
@@ -727,7 +690,7 @@ curl -X POST http://localhost:8000/api/auth/logout/ \
 - created_at
 ```
 
-### Notification (✨ NOVO)
+### Notification
 
 ```python
 - recipient (ForeignKey → User)
@@ -738,16 +701,6 @@ curl -X POST http://localhost:8000/api/auth/logout/ \
 - created_at
 
 # unique_together: (recipient, actor, notification_type, post)
-```
-
-### Comment
-
-```python
-- user (ForeignKey → User)
-- post (ForeignKey → Post)
-- content (max 280 chars)
-- created_at
-- updated_at
 ```
 
 ### Like
@@ -777,19 +730,20 @@ curl -X POST http://localhost:8000/api/auth/logout/ \
 ### Métricas de Código
 
 - **Linhas de Código:** ~8.000+ (Python)
-- **Testes:** 404 (99% cobertura)
-- **Endpoints:** 52
-- **Models:** 11
-- **Serializers:** 20+
-- **ViewSets:** 14+
-- **Arquivos de Teste:** 34
+- **Testes:** 414 (99% cobertura)
+- **Endpoints:** 47
+- **Models:** 9
+- **Serializers:** 10
+- **ViewSets:** 12
+- **Arquivos de Teste:** 30+
 
 ### Complexidade
 
-- **Funcionalidades Avançadas:** 9 (polls, retweets, replies, etc)
+- **Funcionalidades Avançadas:** 10 (polls, retweets, replies, filtros dinâmicos, etc)
 - **Sistema de Notificações:** 5 tipos
 - **Processamento Assíncrono:** Celery + Redis
 - **Busca Avançada:** 3 tipos de recursos
+- **Armazenamento de Mídia:** Cloudinary (produção)
 
 ---
 
@@ -818,7 +772,7 @@ No `config/settings.py`:
 ```python
 CORS_ALLOWED_ORIGINS = os.environ.get(
     'CORS_ALLOWED_ORIGINS',
-    'http://localhost:3000'
+    'http://localhost:5173'
 ).split(',')
 ```
 
@@ -846,47 +800,50 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Login
-const login = async (username: string, password: string) => {
-  const response = await api.post('/auth/login/', { username, password });
+// Login com username, email ou telefone
+const login = async (identifier: string, password: string) => {
+  const response = await api.post('/auth/login/', { identifier, password });
   localStorage.setItem('token', response.data.token);
   return response.data.user;
 };
 
-// Criar post com poll
-const createPost = async (content: string, pollData?: PollData) => {
-  const response = await api.post('/posts/', {
-    content,
-    poll: pollData ? {
-      duration_hours: pollData.duration,
-      options: pollData.options
-    } : undefined
+// Listar posts com filtros dinâmicos
+const getUserPosts = async (userId: number) => {
+  const response = await api.get('/posts/', {
+    params: { author: userId, has_reply: false, is_retweet: false }
   });
   return response.data;
 };
 
-// Upload de múltiplas imagens
-const createPostWithImages = async (content: string, images: File[]) => {
+// Posts curtidos por um usuário
+const getLikedPosts = async (userId: number) => {
+  const response = await api.get('/posts/', {
+    params: { liked_by: userId }
+  });
+  return response.data;
+};
+
+// Upload de mídia (imagens e GIFs)
+const createPostWithMedia = async (content: string, files: File[]) => {
   const formData = new FormData();
   formData.append('content', content);
-  images.forEach(img => formData.append('media_files', img));
-  
+  files.forEach(file => formData.append('media_files', file));
+
   const response = await api.post('/posts/', formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
   });
   return response.data;
 };
 
-// Busca global
-const search = async (query: string) => {
-  const response = await api.get(`/search/all/?q=${query}&limit=5`);
-  return response.data; // { posts: [], users: [], hashtags: [], meta: {} }
+// Curtir post — retorna like_id necessário para descurtir
+const likePost = async (postId: number) => {
+  const response = await api.post('/likes/', { post: postId });
+  return response.data; // { id: likeId, ... }
 };
 
-// Notificações não lidas
-const getUnreadCount = async () => {
-  const response = await api.get('/notifications/unread-count/');
-  return response.data.count;
+// Descurtir post usando like_id
+const unlikePost = async (likeId: number) => {
+  await api.delete(`/likes/${likeId}/`);
 };
 ```
 
@@ -900,7 +857,7 @@ const getUnreadCount = async () => {
 POST /api/posts/
 {
   "content": "Explorando #Python e #Django no Brasil! 🇧🇷",
-  "media_files": [<imagem1>, <imagem2>],
+  "media_files": [<imagem1>, <gif1>],
   "location": {
     "name": "São Paulo, Brasil",
     "latitude": "-23.550520",
@@ -916,7 +873,7 @@ POST /api/posts/
 ```
 
 **Resultado:**
-- Post criado com 2 imagens
+- Post criado com 1 imagem e 1 GIF (armazenados no Cloudinary em produção)
 - Localização marcada
 - Poll ativa com 4 opções
 - Hashtags extraídas automaticamente (#Python, #Django)
@@ -925,12 +882,15 @@ POST /api/posts/
 ### 2. Interagir com Posts
 
 ```python
-# Retweet simples
+# Retweet simples (independente de quote retweet existente)
 POST /api/posts/{id}/retweet/
 
-# Quote retweet
+# Quote retweet (múltiplos permitidos)
 POST /api/posts/{id}/quote-retweet/
 { "content": "Concordo!" }
+
+# Desfazer apenas retweet simples
+DELETE /api/posts/{id}/unretweet/
 
 # Reply
 POST /api/posts/
@@ -940,7 +900,23 @@ POST /api/posts/
 GET /api/posts/{id}/thread/
 ```
 
-### 3. Sistema de Notificações
+### 3. Filtros Dinâmicos de Posts
+
+```python
+# Posts de um usuário (sem replies e sem retweets)
+GET /api/posts/?author=1&has_reply=false&is_retweet=false
+
+# Replies de um usuário
+GET /api/posts/?author=1&has_reply=true
+
+# Posts com mídia de um usuário
+GET /api/posts/?author=1&has_media=true
+
+# Posts curtidos por um usuário
+GET /api/posts/?liked_by=1
+```
+
+### 4. Sistema de Notificações
 
 ```python
 # Listar notificações
@@ -966,7 +942,7 @@ POST /api/notifications/read-all/
 - Alguém te seguiu → notificação
 - Alguém te mencionou → notificação
 
-### 4. Busca e Descoberta
+### 5. Busca e Descoberta
 
 ```python
 # Busca global
@@ -978,12 +954,6 @@ GET /api/hashtags/trending/?period=week&limit=10
 
 # Posts mais vistos
 GET /api/posts/trending/?period=today&limit=20
-
-# Posts por hashtag
-GET /api/hashtags/{id}/posts/
-
-# Locations próximas
-GET /api/locations/nearby/?lat=-23.55&lng=-46.63&radius=10
 ```
 
 ---
@@ -1003,10 +973,18 @@ GET /api/locations/nearby/?lat=-23.55&lng=-46.63&radius=10
 - ✅ Celery workers em background services separados
 - ✅ Redis gerenciado (Render addon ou serviço externo)
 - ✅ PostgreSQL gerenciado (Render database)
+- ✅ Mídia armazenada no **Cloudinary** (obrigatório em produção)
+
+### Mídia
+
+- Em **produção**, todos os uploads são armazenados no **Cloudinary**
+- URLs de mídia em produção seguem o padrão: `https://res.cloudinary.com/{cloud_name}/...`
+- Em **desenvolvimento local**, arquivos são armazenados em `/media/`
+- Limites: imagens 5MB, GIFs 15MB, vídeos 50MB, máximo 4 arquivos por post
 
 ### Qualidade
 
-- ✅ 404 testes automatizados (99% cobertura)
+- ✅ 414 testes automatizados (99% cobertura)
 - ✅ Pipeline de CI/CD em cada commit
 - ✅ Code review automatizado
 - ✅ Padrões rigorosos de código
@@ -1017,13 +995,6 @@ GET /api/locations/nearby/?lat=-23.55&lng=-46.63&radius=10
 - ✅ Paginação em todas as listagens
 - ✅ Índices em campos críticos (created_at, views_count, etc)
 - ✅ Processamento assíncrono para tarefas pesadas
-
-### Escalabilidade
-
-- ✅ Arquitetura modular e desacoplada
-- ✅ Celery para processamento distribuído
-- ✅ Redis para cache e filas
-- ✅ Fácil adicionar novos workers
 
 ---
 
@@ -1038,16 +1009,9 @@ Este projeto foi desenvolvido como:
   - Celery + Redis
   - Testes automatizados
   - CI/CD com GitHub Actions
-  - Deploy em produção
+  - Deploy em produção (Render + Cloudinary)
   - Docker para desenvolvimento
   - Arquitetura modular e escalável
-
-**Ideal para demonstrar em entrevistas:**
-- Clean code e boas práticas
-- Testes e qualidade
-- DevOps e CI/CD
-- Features complexas (polls, retweets, notificações)
-- Processamento assíncrono
 
 ---
 
@@ -1080,7 +1044,7 @@ Contribuições são bem-vindas! Sinta-se à vontade para:
 - Siga os padrões de código (Black, Isort, Flake8)
 - Adicione testes para novas funcionalidades (manter 99% cobertura)
 - Atualize a documentação quando necessário
-- Certifique-se que os testes passam (`pytest`)
+- Certifique-se que os testes passam (`pytest --create-db`)
 - Verifique o CI antes de fazer merge
 
 ---
@@ -1106,15 +1070,25 @@ Encontrou um bug? Abra uma issue com:
 - [Poetry Documentation](https://python-poetry.org/docs/)
 - [Docker Documentation](https://docs.docker.com/)
 - [Pytest Documentation](https://docs.pytest.org/)
-
-### Tutoriais e Referências
-- [DRF Token Authentication](https://www.django-rest-framework.org/api-guide/authentication/#tokenauthentication)
-- [Celery with Django](https://docs.celeryq.dev/en/stable/django/first-steps-with-django.html)
-- [PostgreSQL Best Practices](https://wiki.postgresql.org/wiki/Don%27t_Do_This)
+- [Cloudinary Documentation](https://cloudinary.com/documentation)
 
 ---
 
 ## 🔄 Changelog
+
+### v3.0.0 (2026-03-16)
+- ✨ Login com username, email ou telefone (`identifier`)
+- ✨ Campo `phone` adicionado ao modelo User
+- ✨ Remoção do modelo Comment (substituído por Replies)
+- ✨ `stats.comments` renomeado para `stats.replies`
+- ✨ Persistência de likes com `is_liked` e `like_id` no serializer de posts
+- ✨ Correção do comportamento de retweets (simples e quote independentes)
+- ✨ Filtros dinâmicos em `GET /api/posts/` (`author`, `has_reply`, `has_media`, `is_retweet`, `liked_by`)
+- ✨ Integração com Cloudinary para armazenamento de mídia em produção
+- ✨ Aumento do limite de GIFs para 15MB
+- ✨ Aumento do limite de `profile_image` para 5MB
+- 🧪 Expandido testes de 404 para 414
+- 📚 Atualizada documentação (v3.0, 47 endpoints)
 
 ### v2.0.0 (2026-02-19)
 - ✨ Adicionado sistema de Retweets e Quote Retweets
@@ -1141,23 +1115,7 @@ Encontrou um bug? Abra uma issue com:
 
 ---
 
-## ⭐ Se Este Projeto Te Ajudou
-
-**Considere dar uma estrela no GitHub!**
-
-[![GitHub stars](https://img.shields.io/github/stars/victorpiressk/twitter-clone-api?style=social)](https://github.com/victorpiressk/twitter-clone-api)
-
----
-
-## 📞 Suporte
-
-Para dúvidas ou suporte:
-- Abra uma [issue](https://github.com/victorpiressk/twitter-clone-api/issues)
-- Entre em contato via [LinkedIn](https://www.linkedin.com/in/victor-p-rego/)
-
----
-
-**Versão:** 2.0.0  
-**Última atualização:** 19/02/2026  
+**Versão:** 3.0.0  
+**Última atualização:** 16/03/2026  
 **Status:** ✅ Em Produção  
 **Documentação:** Completa e Atualizada

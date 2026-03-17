@@ -38,11 +38,16 @@ class PostMediaSerializer(serializers.ModelSerializer):
 
     def get_url(self, obj):
         """Retorna URL completa do arquivo."""
-        request = self.context.get("request")
         if obj.file and hasattr(obj.file, "url"):
+            url = obj.file.url
+            # Se já é URL absoluta (Cloudinary), retorna diretamente
+            if url.startswith("http"):
+                return url
+            # Se é URL relativa (local), constrói URL absoluta
+            request = self.context.get("request")
             if request:
-                return request.build_absolute_uri(obj.file.url)
-            return obj.file.url
+                return request.build_absolute_uri(url)
+            return url
         return None
 
 
@@ -58,6 +63,8 @@ class PostSerializer(serializers.ModelSerializer):
     is_published = serializers.ReadOnlyField()
     stats = serializers.SerializerMethodField()
     is_retweeted = serializers.SerializerMethodField()
+    is_liked = serializers.SerializerMethodField()
+    like_id = serializers.SerializerMethodField()
     hashtags = HashtagSerializer(many=True, read_only=True)
 
     class Meta:
@@ -80,6 +87,8 @@ class PostSerializer(serializers.ModelSerializer):
             "is_retweeted",
             "created_at",
             "updated_at",
+            "is_liked",
+            "like_id",
         ]
         read_only_fields = [
             "id",
@@ -101,7 +110,7 @@ class PostSerializer(serializers.ModelSerializer):
     def get_stats(self, obj):
         """Retorna estatísticas do post como objeto."""
         return {
-            "comments": obj.comments_count,
+            "replies": obj.replies_count,
             "retweets": obj.retweets_count,
             "likes": obj.likes_count,
             "views": obj.views_count,
@@ -115,6 +124,21 @@ class PostSerializer(serializers.ModelSerializer):
                 author=request.user, is_retweet=True, retweet_of=obj
             ).exists()
         return False
+
+    def get_is_liked(self, obj):
+        """Verifica se o usuário autenticado curtiu este post."""
+        request = self.context.get("request")
+        if request and request.user.is_authenticated:
+            return obj.likes.filter(user=request.user).exists()
+        return False
+
+    def get_like_id(self, obj):
+        """Retorna o ID do like do usuário autenticado, se existir."""
+        request = self.context.get("request")
+        if request and request.user.is_authenticated:
+            like = obj.likes.filter(user=request.user).first()
+            return like.id if like else None
+        return None
 
 
 class PostCreateSerializer(serializers.ModelSerializer):
@@ -189,7 +213,12 @@ class PostCreateSerializer(serializers.ModelSerializer):
             # Verificar tipo de arquivo
             content_type = file.content_type
 
-            if content_type.startswith("image/"):
+            if content_type.startswith("image/gif"):
+                if file.size > 15 * 1024 * 1024:  # 15MB para GIFs
+                    raise serializers.ValidationError(
+                        "GIF muito grande. Tamanho máximo: 15MB"
+                    )
+            elif content_type.startswith("image/"):
                 if file.size > max_size_image:
                     raise serializers.ValidationError(
                         "Imagem muito grande. Tamanho máximo: 5MB"
@@ -223,6 +252,7 @@ class PostCreateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         """Cria post com mídias e location associadas se fornecida."""
+
         location_data = validated_data.pop("location", None)
         media_files = validated_data.pop("media_files", [])
         scheduled_for = validated_data.pop("scheduled_for", None)

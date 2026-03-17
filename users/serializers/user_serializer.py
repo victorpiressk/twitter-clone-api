@@ -4,7 +4,6 @@ User serializers.
 
 from datetime import date
 
-from PIL import Image
 from rest_framework import serializers
 
 from users.models import User
@@ -46,32 +45,29 @@ class UserSerializer(serializers.ModelSerializer):
         }
 
     def _validate_image(self, image_file, max_size_mb=5):
-        """Método auxiliar interno do Serializer."""
         # Validação de tamanho
         if image_file.size > max_size_mb * 1024 * 1024:
             raise serializers.ValidationError(
                 f"Imagem muito grande. Máximo: {max_size_mb}MB"
             )
 
-        # Validação de formato
-        allowed_formats = ["JPEG", "PNG", "WEBP", "JPG"]
-        try:
-            img = Image.open(image_file)
-            if img.format not in allowed_formats:
-                raise serializers.ValidationError(f"Formato {img.format} não aceito.")
-        except Exception:
-            raise serializers.ValidationError("Arquivo de imagem inválido.")
+        # Validação de formato — apenas pela extensão/content_type
+        # Não usar Image.open() pois conflita com Cloudinary storage
+        allowed_content_types = ["image/jpeg", "image/png", "image/webp", "image/jpg"]
+        content_type = getattr(image_file, "content_type", "")
+        if content_type and content_type not in allowed_content_types:
+            raise serializers.ValidationError(
+                "Formato não aceito. Use JPEG, PNG ou WEBP."
+            )
 
-    def validate_banner(self, value):
+    def validate_profile_image(self, value):
         if value:
             self._validate_image(value, max_size_mb=5)
         return value
 
-    def validate_profile_image(self, value):
+    def validate_banner(self, value):
         if value:
-            self._validate_image(
-                value, max_size_mb=2
-            )  # Ex: Limite diferente para avatar
+            self._validate_image(value, max_size_mb=5)
         return value
 
     def validate_website(self, value):

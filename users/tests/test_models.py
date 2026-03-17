@@ -104,6 +104,31 @@ class TestUserModel:
 
         assert user1.following_count == 2
 
+    def test_user_has_phone_field(self):
+        """Testa que o campo phone existe no model."""
+        user = User.objects.create_user(
+            username="testuser", password="testpass123", phone="11999999999"
+        )
+
+        assert user.phone == "11999999999"
+
+    def test_phone_is_optional(self):
+        """Testa que phone pode ser nulo."""
+        user = User.objects.create_user(username="testuser", password="testpass123")
+
+        assert user.phone is None
+
+    def test_phone_is_unique(self):
+        """Testa que dois usuários não podem ter o mesmo phone."""
+        User.objects.create_user(
+            username="user1", password="pass123", phone="11999999999"
+        )
+
+        with pytest.raises(Exception):
+            User.objects.create_user(
+                username="user2", password="pass123", phone="11999999999"
+            )
+
 
 @pytest.mark.django_db
 class TestFollowModel:

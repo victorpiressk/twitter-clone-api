@@ -2,8 +2,8 @@
 
 Documentação completa de todos os endpoints da API REST do Twitter Clone.
 
-**Versão:** 2.0  
-**Última atualização:** 19/02/2026  
+**Versão:** 3.0  
+**Última atualização:** 16/03/2026  
 **Base URL (desenvolvimento):** `http://localhost:8000/api`
 
 ---
@@ -25,7 +25,6 @@ Documentação completa de todos os endpoints da API REST do Twitter Clone.
 - [Hashtags](#hashtags)
 - [Notificações](#notificações)
 - [Busca](#busca)
-- [Comentários](#comentários)
 - [Curtidas](#curtidas)
 - [Códigos de Status](#códigos-de-status-http)
 - [Testando a API](#testando-a-api)
@@ -53,12 +52,16 @@ Authorization: Token <seu_token_aqui>
 {
   "username": "novouser",
   "email": "novo@example.com",
+  "phone": "11999999999",
   "password": "senha12345",
   "password_confirm": "senha12345",
   "first_name": "Novo",
-  "last_name": "Usuário"
+  "last_name": "Usuário",
+  "birth_date": "1995-06-15"
 }
 ```
+
+**Nota:** `email` e `phone` são opcionais individualmente, mas pelo menos um dos dois deve ser fornecido. `birth_date` é obrigatório.
 
 **Resposta (201 Created):**
 ```json
@@ -74,7 +77,7 @@ Authorization: Token <seu_token_aqui>
     "banner": null,
     "location": "",
     "website": "",
-    "birth_date": null,
+    "birth_date": "1995-06-15",
     "stats": {
       "posts": 0,
       "following": 0,
@@ -87,7 +90,7 @@ Authorization: Token <seu_token_aqui>
 ```
 
 **Erros Possíveis:**
-- `400 Bad Request` - Senhas não coincidem, username/email já existe, campos obrigatórios faltando
+- `400 Bad Request` - Senhas não coincidem, username/email/phone já existe, campos obrigatórios faltando, idade menor que 13 anos, data de nascimento no futuro, email e phone ausentes simultaneamente
 
 ---
 
@@ -100,10 +103,12 @@ Authorization: Token <seu_token_aqui>
 **Body:**
 ```json
 {
-  "username": "novouser",
+  "identifier": "nome_de_usuario, email ou telefone",
   "password": "senha12345"
 }
 ```
+
+**Nota:** O campo `identifier` aceita username, email ou telefone.
 
 **Resposta (200 OK):**
 ```json
@@ -119,7 +124,7 @@ Authorization: Token <seu_token_aqui>
     "banner": null,
     "location": "",
     "website": "",
-    "birth_date": null,
+    "birth_date": "1995-06-15",
     "stats": {
       "posts": 0,
       "following": 0,
@@ -132,7 +137,7 @@ Authorization: Token <seu_token_aqui>
 ```
 
 **Erros Possíveis:**
-- `400 Bad Request` - Credenciais inválidas
+- `400 Bad Request` - Credenciais inválidas, identifier ou senha ausentes
 
 ---
 
@@ -182,8 +187,8 @@ Authorization: Token <seu_token_aqui>
       "first_name": "User",
       "last_name": "One",
       "bio": "Desenvolvedor Python 🐍",
-      "profile_image": "http://localhost:8000/media/profile_images/user1.jpg",
-      "banner": "http://localhost:8000/media/banners/user1_banner.jpg",
+      "profile_image": "https://res.cloudinary.com/seu_cloud/image/upload/profile_images/user1.jpg",
+      "banner": "https://res.cloudinary.com/seu_cloud/image/upload/banners/user1_banner.jpg",
       "location": "São Paulo, Brasil",
       "website": "https://user1.dev",
       "birth_date": "1990-05-15",
@@ -215,8 +220,8 @@ Authorization: Token <seu_token_aqui>
   "first_name": "User",
   "last_name": "One",
   "bio": "Desenvolvedor Python 🐍",
-  "profile_image": "http://localhost:8000/media/profile_images/user1.jpg",
-  "banner": "http://localhost:8000/media/banners/user1_banner.jpg",
+  "profile_image": "https://res.cloudinary.com/seu_cloud/image/upload/profile_images/user1.jpg",
+  "banner": "https://res.cloudinary.com/seu_cloud/image/upload/banners/user1_banner.jpg",
   "location": "São Paulo, Brasil",
   "website": "https://user1.dev",
   "birth_date": "1990-05-15",
@@ -249,8 +254,8 @@ Authorization: Token <seu_token_aqui>
   "first_name": "User",
   "last_name": "One",
   "bio": "Desenvolvedor Python 🐍",
-  "profile_image": "http://localhost:8000/media/profile_images/user1.jpg",
-  "banner": "http://localhost:8000/media/banners/user1_banner.jpg",
+  "profile_image": "https://res.cloudinary.com/seu_cloud/image/upload/profile_images/user1.jpg",
+  "banner": "https://res.cloudinary.com/seu_cloud/image/upload/banners/user1_banner.jpg",
   "location": "São Paulo, Brasil",
   "website": "https://user1.dev",
   "birth_date": "1990-05-15",
@@ -291,7 +296,7 @@ Authorization: Token <seu_token_aqui>
 
 **Validações:**
 - `bio`: máximo 160 caracteres
-- `profile_image`: máximo 2MB, formatos: JPEG, PNG, WEBP
+- `profile_image`: máximo 5MB, formatos: JPEG, PNG, WEBP
 - `banner`: máximo 5MB, formatos: JPEG, PNG, WEBP
 - `website`: deve começar com http:// ou https://
 - `birth_date`: idade mínima 13 anos, não pode ser futura
@@ -305,8 +310,8 @@ Authorization: Token <seu_token_aqui>
   "first_name": "Novo Nome",
   "last_name": "One",
   "bio": "Nova bio atualizada 🚀",
-  "profile_image": "http://localhost:8000/media/profile_images/user1_new.jpg",
-  "banner": "http://localhost:8000/media/banners/user1_new.jpg",
+  "profile_image": "https://res.cloudinary.com/seu_cloud/image/upload/profile_images/user1_new.jpg",
+  "banner": "https://res.cloudinary.com/seu_cloud/image/upload/banners/user1_new.jpg",
   "location": "Rio de Janeiro, Brasil",
   "website": "https://novosite.com",
   "birth_date": "1995-10-20",
@@ -320,7 +325,7 @@ Authorization: Token <seu_token_aqui>
 ```
 
 **Erros Possíveis:**
-- `400 Bad Request` - Validação falhou (imagem muito grande, idade < 13, etc)
+- `400 Bad Request` - Validação falhou (imagem muito grande, formato inválido, idade < 13, etc)
 - `401 Unauthorized` - Não autenticado
 - `403 Forbidden` - Tentando editar perfil de outro usuário
 
@@ -342,7 +347,7 @@ Authorization: Token <seu_token_aqui>
     "first_name": "Follower",
     "last_name": "One",
     "bio": "Python enthusiast",
-    "profile_image": "http://localhost:8000/media/profile_images/follower1.jpg",
+    "profile_image": "https://res.cloudinary.com/seu_cloud/image/upload/profile_images/follower1.jpg",
     "banner": null,
     "location": "Brasília, Brasil",
     "website": "",
@@ -480,6 +485,11 @@ Sem body
 **Query Parameters:**
 - `page` (opcional) - Número da página
 - `page_size` (opcional) - Itens por página
+- `author` (opcional) - Filtrar por ID do autor
+- `has_reply` (opcional) - `true` retorna apenas replies, `false` exclui replies
+- `has_media` (opcional) - `true` retorna apenas posts com mídia, `false` exclui posts com mídia
+- `is_retweet` (opcional) - `true` retorna apenas retweets, `false` exclui retweets
+- `liked_by` (opcional) - Filtrar posts curtidos pelo ID do usuário informado
 
 **Resposta (200 OK):**
 ```json
@@ -497,7 +507,7 @@ Sem body
         "first_name": "User",
         "last_name": "One",
         "bio": "Desenvolvedor Python",
-        "profile_image": "http://localhost:8000/media/profile_images/user1.jpg",
+        "profile_image": "https://res.cloudinary.com/seu_cloud/image/upload/profile_images/user1.jpg",
         "banner": null,
         "location": "São Paulo",
         "website": "",
@@ -514,7 +524,7 @@ Sem body
         {
           "id": 1,
           "type": "image",
-          "url": "http://localhost:8000/media/post_media/img1.jpg",
+          "url": "https://res.cloudinary.com/seu_cloud/image/upload/post_media/img1.jpg",
           "thumbnail": null,
           "order": 0
         }
@@ -528,13 +538,6 @@ Sem body
           "slug": "python",
           "posts_count": 150,
           "created_at": "2026-01-01T10:00:00Z"
-        },
-        {
-          "id": 2,
-          "name": "django",
-          "slug": "django",
-          "posts_count": 120,
-          "created_at": "2026-01-01T10:05:00Z"
         }
       ],
       "is_retweet": false,
@@ -543,12 +546,14 @@ Sem body
       "scheduled_for": null,
       "is_published": true,
       "stats": {
-        "comments": 5,
+        "replies": 5,
         "retweets": 10,
         "likes": 25,
         "views": 150
       },
       "is_retweeted": false,
+      "is_liked": false,
+      "like_id": null,
       "created_at": "2026-02-19T10:00:00Z",
       "updated_at": "2026-02-19T10:00:00Z"
     }
@@ -573,7 +578,7 @@ Sem body
   "author": {
     "id": 1,
     "username": "user1",
-    ...
+    "...": "..."
   },
   "content": "Post detalhado",
   "media": [],
@@ -593,12 +598,14 @@ Sem body
   "scheduled_for": null,
   "is_published": true,
   "stats": {
-    "comments": 5,
+    "replies": 5,
     "retweets": 10,
     "likes": 25,
     "views": 151
   },
   "is_retweeted": false,
+  "is_liked": true,
+  "like_id": 42,
   "created_at": "2026-02-19T10:00:00Z",
   "updated_at": "2026-02-19T10:00:00Z"
 }
@@ -641,9 +648,10 @@ Sem body
 **Validações:**
 - `content`: obrigatório, máximo 280 caracteres
 - `media_files`: máximo 4 arquivos
-  - Imagens: máximo 5MB cada (JPEG, PNG, GIF, WEBP)
-  - Vídeos: máximo 50MB cada (MP4, MOV)
-- `poll`: 
+  - Imagens (JPEG, PNG, WEBP): máximo 5MB cada
+  - GIFs: máximo 15MB cada
+  - Vídeos (MP4, MOV): máximo 50MB cada
+- `poll`:
   - mínimo 2 opções, máximo 4
   - `duration_hours`: mínimo 1h, máximo 168h (7 dias)
   - opções sem duplicatas
@@ -657,11 +665,19 @@ Sem body
 ```json
 {
   "id": 2,
-  "author": {...},
+  "author": {"...": "..."},
   "content": "Meu novo post com #hashtags!",
-  "media": [...],
-  "poll": {...},
-  "location": {...},
+  "media": [
+    {
+      "id": 1,
+      "type": "image",
+      "url": "https://res.cloudinary.com/seu_cloud/image/upload/post_media/img1.jpg",
+      "thumbnail": null,
+      "order": 0
+    }
+  ],
+  "poll": {"...": "..."},
+  "location": {"...": "..."},
   "hashtags": [
     {
       "id": 3,
@@ -677,12 +693,14 @@ Sem body
   "scheduled_for": "2026-02-20T15:00:00Z",
   "is_published": false,
   "stats": {
-    "comments": 0,
+    "replies": 0,
     "retweets": 0,
     "likes": 0,
     "views": 0
   },
   "is_retweeted": false,
+  "is_liked": false,
+  "like_id": null,
   "created_at": "2026-02-19T11:00:00Z",
   "updated_at": "2026-02-19T11:00:00Z"
 }
@@ -711,7 +729,7 @@ Sem body
 ```json
 {
   "id": 2,
-  "author": {...},
+  "author": {"...": "..."},
   "content": "Conteúdo atualizado",
   "media": [],
   "poll": null,
@@ -723,12 +741,14 @@ Sem body
   "scheduled_for": null,
   "is_published": true,
   "stats": {
-    "comments": 0,
+    "replies": 0,
     "retweets": 0,
     "likes": 0,
     "views": 5
   },
   "is_retweeted": false,
+  "is_liked": false,
+  "like_id": null,
   "created_at": "2026-02-19T11:00:00Z",
   "updated_at": "2026-02-19T11:30:00Z"
 }
@@ -773,7 +793,7 @@ Sem body
     "author": {
       "id": 2,
       "username": "following1",
-      ...
+      "...": "..."
     },
     "content": "Post de alguém que eu sigo",
     "media": [],
@@ -786,12 +806,14 @@ Sem body
     "scheduled_for": null,
     "is_published": true,
     "stats": {
-      "comments": 5,
+      "replies": 5,
       "retweets": 3,
       "likes": 15,
       "views": 100
     },
     "is_retweeted": false,
+    "is_liked": false,
+    "like_id": null,
     "created_at": "2026-02-19T12:00:00Z",
     "updated_at": "2026-02-19T12:00:00Z"
   }
@@ -810,7 +832,7 @@ Sem body
 
 **Body:** Vazio
 
-**Descrição:** Retweeta um post sem comentário
+**Descrição:** Retweeta um post sem comentário. Permite retweet simples mesmo que já exista um quote retweet do mesmo post.
 
 **Resposta (201 Created):**
 ```json
@@ -819,7 +841,7 @@ Sem body
   "author": {
     "id": 1,
     "username": "user1",
-    ...
+    "...": "..."
   },
   "content": "",
   "media": [],
@@ -832,21 +854,23 @@ Sem body
   "scheduled_for": null,
   "is_published": true,
   "stats": {
-    "comments": 0,
+    "replies": 0,
     "retweets": 0,
     "likes": 0,
     "views": 0
   },
   "is_retweeted": false,
+  "is_liked": false,
+  "like_id": null,
   "created_at": "2026-02-19T13:00:00Z",
   "updated_at": "2026-02-19T13:00:00Z"
 }
 ```
 
-**Nota:** Incrementa `retweets_count` do post original automaticamente
+**Nota:** Incrementa `retweets_count` do post original automaticamente.
 
 **Erros Possíveis:**
-- `400 Bad Request` - Já retweetou este post
+- `400 Bad Request` - Já fez retweet simples deste post
 - `401 Unauthorized` - Não autenticado
 
 ---
@@ -867,6 +891,8 @@ Sem body
 **Validações:**
 - `content`: obrigatório, máximo 280 caracteres
 
+**Nota:** Múltiplos quote retweets do mesmo post são permitidos.
+
 **Resposta (201 Created):**
 ```json
 {
@@ -874,7 +900,7 @@ Sem body
   "author": {
     "id": 1,
     "username": "user1",
-    ...
+    "...": "..."
   },
   "content": "Concordo totalmente! 👏",
   "media": [],
@@ -887,12 +913,14 @@ Sem body
   "scheduled_for": null,
   "is_published": true,
   "stats": {
-    "comments": 0,
+    "replies": 0,
     "retweets": 0,
     "likes": 0,
     "views": 0
   },
   "is_retweeted": false,
+  "is_liked": false,
+  "like_id": null,
   "created_at": "2026-02-19T13:05:00Z",
   "updated_at": "2026-02-19T13:05:00Z"
 }
@@ -910,15 +938,15 @@ Sem body
 
 **Autenticação:** Requerida
 
-**Descrição:** Remove o retweet do post especificado
+**Descrição:** Remove apenas o retweet simples do post. Quote retweets não são afetados.
 
 **Resposta (204 No Content):**
 Sem body
 
-**Nota:** Decrementa `retweets_count` do post original automaticamente
+**Nota:** Decrementa `retweets_count` do post original automaticamente.
 
 **Erros Possíveis:**
-- `400 Bad Request` - Você não retweetou este post
+- `400 Bad Request` - Você não fez retweet simples deste post
 - `401 Unauthorized` - Não autenticado
 
 ---
@@ -943,7 +971,7 @@ Sem body
 ```json
 {
   "id": 12,
-  "author": {...},
+  "author": {"...": "..."},
   "content": "Esta é minha resposta!",
   "media": [],
   "poll": null,
@@ -955,12 +983,14 @@ Sem body
   "scheduled_for": null,
   "is_published": true,
   "stats": {
-    "comments": 0,
+    "replies": 0,
     "retweets": 0,
     "likes": 0,
     "views": 0
   },
   "is_retweeted": false,
+  "is_liked": false,
+  "like_id": null,
   "created_at": "2026-02-19T13:10:00Z",
   "updated_at": "2026-02-19T13:10:00Z"
 }
@@ -984,17 +1014,17 @@ Sem body
 [
   {
     "id": 12,
-    "author": {...},
+    "author": {"...": "..."},
     "content": "Primeira resposta",
     "in_reply_to": 5,
-    ...
+    "...": "..."
   },
   {
     "id": 13,
-    "author": {...},
+    "author": {"...": "..."},
     "content": "Segunda resposta",
     "in_reply_to": 5,
-    ...
+    "...": "..."
   }
 ]
 ```
@@ -1018,19 +1048,19 @@ Sem body
     "id": 5,
     "content": "Post original (A)",
     "in_reply_to": null,
-    ...
+    "...": "..."
   },
   {
     "id": 10,
     "content": "Resposta ao A (B)",
     "in_reply_to": 5,
-    ...
+    "...": "..."
   },
   {
     "id": 12,
     "content": "Resposta ao B (C)",
     "in_reply_to": 10,
-    ...
+    "...": "..."
   }
 ]
 ```
@@ -1039,12 +1069,13 @@ Sem body
 
 ### Múltiplas Mídias
 
-**Nota:** Upload de mídias é feito através do endpoint de criar post (endpoint 15)
+**Nota:** Upload de mídias é feito através do endpoint de criar post (endpoint 15). Arquivos são armazenados no Cloudinary em produção.
 
 **Validações:**
 - Máximo **4 mídias** por post
-- **Imagens:** JPEG, PNG, GIF, WEBP - máximo 5MB cada
-- **Vídeos:** MP4, MOV - máximo 50MB cada
+- **Imagens** (JPEG, PNG, WEBP): máximo 5MB cada
+- **GIFs**: máximo 15MB cada
+- **Vídeos** (MP4, MOV): máximo 50MB cada
 - Ordem preservada automaticamente
 
 **Exemplo de Upload (multipart/form-data):**
@@ -1053,11 +1084,9 @@ curl -X POST http://localhost:8000/api/posts/ \
   -H "Authorization: Token SEU_TOKEN" \
   -F "content=Post com múltiplas imagens!" \
   -F "media_files=@image1.jpg" \
-  -F "media_files=@image2.jpg" \
+  -F "media_files=@animated.gif" \
   -F "media_files=@video.mp4"
 ```
-
-**Resposta:** Post com array `media` contendo as 3 mídias
 
 ---
 
@@ -1077,10 +1106,9 @@ curl -X POST http://localhost:8000/api/posts/ \
   {
     "id": 20,
     "content": "Post agendado para amanhã",
-    "author": {...},
+    "author": {"...": "..."},
     "scheduled_for": "2026-02-20T10:00:00Z",
-    "is_published": false,
-    ...
+    "is_published": false
   }
 ]
 ```
@@ -1108,12 +1136,12 @@ curl -X POST http://localhost:8000/api/posts/ \
     "id": 30,
     "content": "Post viral!",
     "stats": {
-      "comments": 500,
+      "replies": 500,
       "retweets": 1000,
       "likes": 5000,
       "views": 50000
     },
-    ...
+    "...": "..."
   }
 ]
 ```
@@ -1156,20 +1184,6 @@ curl -X POST http://localhost:8000/api/posts/ \
       "votes": 50,
       "percentage": 33.33,
       "order": 1
-    },
-    {
-      "id": 3,
-      "text": "Go",
-      "votes": 15,
-      "percentage": 10.0,
-      "order": 2
-    },
-    {
-      "id": 4,
-      "text": "Rust",
-      "votes": 5,
-      "percentage": 3.33,
-      "order": 3
     }
   ],
   "user_voted_option_id": null
@@ -1195,11 +1209,6 @@ curl -X POST http://localhost:8000/api/posts/ \
 ```json
 {
   "id": 1,
-  "post": 5,
-  "question": "Qual sua linguagem favorita?",
-  "duration_hours": 24,
-  "ends_at": "2026-02-20T10:00:00Z",
-  "is_ended": false,
   "total_votes": 151,
   "options": [
     {
@@ -1208,8 +1217,7 @@ curl -X POST http://localhost:8000/api/posts/ \
       "votes": 81,
       "percentage": 53.64,
       "order": 0
-    },
-    ...
+    }
   ],
   "user_voted_option_id": 1
 }
@@ -1254,21 +1262,6 @@ Sem body
       "text": "Python",
       "votes": 81,
       "percentage": 53.64
-    },
-    {
-      "text": "JavaScript",
-      "votes": 50,
-      "percentage": 33.11
-    },
-    {
-      "text": "Go",
-      "votes": 15,
-      "percentage": 9.93
-    },
-    {
-      "text": "Rust",
-      "votes": 5,
-      "percentage": 3.31
     }
   ]
 }
@@ -1285,9 +1278,6 @@ Sem body
 **Endpoint:** `GET /api/locations/`
 
 **Autenticação:** Não requerida
-
-**Query Parameters:**
-- `page`, `page_size` - Paginação
 
 **Resposta (200 OK):**
 ```json
@@ -1329,14 +1319,6 @@ Sem body
     "longitude": "2.3522",
     "has_coordinates": true,
     "created_at": "2026-02-19T10:00:00Z"
-  },
-  {
-    "id": 5,
-    "name": "Parque Ibirapuera, São Paulo",
-    "latitude": "-23.587416",
-    "longitude": "-46.657634",
-    "has_coordinates": true,
-    "created_at": "2026-02-19T11:00:00Z"
   }
 ]
 ```
@@ -1373,10 +1355,6 @@ Sem body
 ]
 ```
 
-**Validações:**
-- `lat`: -90 a 90
-- `lng`: -180 a 180
-
 **Erros Possíveis:**
 - `400 Bad Request` - Coordenadas inválidas
 
@@ -1388,8 +1366,6 @@ Sem body
 
 **Autenticação:** Não requerida
 
-**Descrição:** Lista posts associados a uma location
-
 **Resposta (200 OK):**
 ```json
 [
@@ -1398,10 +1374,9 @@ Sem body
     "content": "Visitando a Torre Eiffel!",
     "location": {
       "id": 1,
-      "name": "Torre Eiffel, Paris",
-      ...
+      "name": "Torre Eiffel, Paris"
     },
-    ...
+    "...": "..."
   }
 ]
 ```
@@ -1429,19 +1404,10 @@ Sem body
       "slug": "python",
       "posts_count": 1500,
       "created_at": "2026-01-01T10:00:00Z"
-    },
-    {
-      "id": 2,
-      "name": "django",
-      "slug": "django",
-      "posts_count": 1200,
-      "created_at": "2026-01-01T10:05:00Z"
     }
   ]
 }
 ```
-
-**Ordenação:** Por `posts_count` descendente
 
 ---
 
@@ -1482,11 +1448,10 @@ Sem body
     "hashtags": [
       {
         "id": 1,
-        "name": "python",
-        ...
+        "name": "python"
       }
     ],
-    ...
+    "...": "..."
   }
 ]
 ```
@@ -1511,13 +1476,6 @@ Sem body
     "slug": "python",
     "posts_count": 1500,
     "created_at": "2026-01-01T10:00:00Z"
-  },
-  {
-    "id": 10,
-    "name": "pytorch",
-    "slug": "pytorch",
-    "posts_count": 500,
-    "created_at": "2026-01-15T12:00:00Z"
   }
 ]
 ```
@@ -1559,8 +1517,6 @@ Sem body
 }
 ```
 
-**Ordenação:** Por `recent_posts_count` (para períodos) ou `posts_count` (para `all`)
-
 ---
 
 ## 🔔 Notificações
@@ -1583,21 +1539,7 @@ Sem body
       "actor": {
         "id": 2,
         "username": "bob",
-        "email": "bob@example.com",
-        "first_name": "Bob",
-        "last_name": "Silva",
-        "bio": "",
-        "profile_image": null,
-        "banner": null,
-        "location": "",
-        "website": "",
-        "birth_date": null,
-        "stats": {
-          "posts": 50,
-          "following": 100,
-          "followers": 80
-        },
-        "created_at": "2026-02-01T10:00:00Z"
+        "...": "..."
       },
       "notification_type": "like",
       "notification_type_display": "Curtida",
@@ -1617,12 +1559,7 @@ Sem body
 }
 ```
 
-**Tipos de notificação:**
-- `like` - Alguém curtiu seu post
-- `retweet` - Alguém retweetou seu post
-- `reply` - Alguém respondeu seu post
-- `follow` - Alguém começou a seguir você
-- `mention` - Alguém te mencionou em um post
+**Tipos de notificação:** `like`, `retweet`, `reply`, `follow`, `mention`
 
 **Ordenação:** Não lidas primeiro, depois por `created_at` descendente
 
@@ -1640,18 +1577,7 @@ Sem body
   "count": 5,
   "next": null,
   "previous": null,
-  "results": [
-    {
-      "id": 1,
-      "actor": {...},
-      "notification_type": "like",
-      "notification_type_display": "Curtida",
-      "post": 5,
-      "post_preview": {...},
-      "is_read": false,
-      "created_at": "2026-02-19T14:30:00Z"
-    }
-  ]
+  "results": ["..."]
 }
 ```
 
@@ -1684,13 +1610,8 @@ Sem body
 ```json
 {
   "id": 1,
-  "actor": {...},
-  "notification_type": "like",
-  "notification_type_display": "Curtida",
-  "post": 5,
-  "post_preview": {...},
   "is_read": true,
-  "created_at": "2026-02-19T14:30:00Z"
+  "...": "..."
 }
 ```
 
@@ -1732,31 +1653,9 @@ Sem body
 **Resposta (200 OK):**
 ```json
 {
-  "posts": [
-    {
-      "id": 10,
-      "content": "Tutorial de Python",
-      "author": {...},
-      ...
-    }
-  ],
-  "users": [
-    {
-      "id": 5,
-      "username": "python_dev",
-      "bio": "Python developer",
-      ...
-    }
-  ],
-  "hashtags": [
-    {
-      "id": 1,
-      "name": "python",
-      "slug": "python",
-      "posts_count": 1500,
-      ...
-    }
-  ],
+  "posts": ["..."],
+  "users": ["..."],
+  "hashtags": ["..."],
   "meta": {
     "query": "python",
     "total_results": 3
@@ -1764,142 +1663,14 @@ Sem body
 }
 ```
 
-**Busca em:**
-- **Posts:** `content` e `hashtags.name`
-- **Users:** `username`, `first_name`, `last_name`, `bio`
-- **Hashtags:** `name`
-
-**Características:**
-- Case-insensitive
-- Posts agendados são excluídos
-- Ordenação: Posts por `-created_at`, Users por `username`, Hashtags por `-posts_count`
-
 **Erros Possíveis:**
 - `400 Bad Request` - Parâmetro `q` ausente ou < 2 caracteres
 
 ---
 
-## 💬 Comentários
-
-### 46. Listar Comentários
-
-**Endpoint:** `GET /api/comments/`
-
-**Autenticação:** Não requerida
-
-**Query Parameters:**
-- `post` (opcional) - Filtrar por ID do post
-
-**Resposta (200 OK):**
-```json
-{
-  "count": 50,
-  "next": null,
-  "previous": null,
-  "results": [
-    {
-      "id": 1,
-      "user": {
-        "id": 2,
-        "username": "commenter",
-        ...
-      },
-      "post": 1,
-      "content": "Ótimo post!",
-      "created_at": "2026-02-19T15:00:00Z",
-      "updated_at": "2026-02-19T15:00:00Z"
-    }
-  ]
-}
-```
-
----
-
-### 47. Criar Comentário
-
-**Endpoint:** `POST /api/comments/`
-
-**Autenticação:** Requerida
-
-**Body:**
-```json
-{
-  "post": 1,
-  "content": "Meu comentário aqui"
-}
-```
-
-**Resposta (201 Created):**
-```json
-{
-  "id": 2,
-  "user": {
-    "id": 1,
-    "username": "user1",
-    ...
-  },
-  "post": 1,
-  "content": "Meu comentário aqui",
-  "created_at": "2026-02-19T15:10:00Z",
-  "updated_at": "2026-02-19T15:10:00Z"
-}
-```
-
-**Erros Possíveis:**
-- `400 Bad Request` - Conteúdo vazio ou post não existe
-- `401 Unauthorized` - Não autenticado
-
----
-
-### 48. Atualizar Comentário
-
-**Endpoint:** `PATCH /api/comments/{id}/`
-
-**Autenticação:** Requerida (apenas o autor do comentário)
-
-**Body:**
-```json
-{
-  "content": "Comentário atualizado"
-}
-```
-
-**Resposta (200 OK):**
-```json
-{
-  "id": 2,
-  "user": {...},
-  "post": 1,
-  "content": "Comentário atualizado",
-  "created_at": "2026-02-19T15:10:00Z",
-  "updated_at": "2026-02-19T15:30:00Z"
-}
-```
-
-**Erros Possíveis:**
-- `403 Forbidden` - Tentando editar comentário de outro usuário
-- `404 Not Found` - Comentário não existe
-
----
-
-### 49. Deletar Comentário
-
-**Endpoint:** `DELETE /api/comments/{id}/`
-
-**Autenticação:** Requerida (apenas o autor)
-
-**Resposta (204 No Content):**
-Sem body
-
-**Erros Possíveis:**
-- `403 Forbidden` - Tentando deletar comentário de outro usuário
-- `404 Not Found` - Comentário não existe
-
----
-
 ## ❤️ Curtidas
 
-### 50. Listar Curtidas
+### 46. Listar Curtidas
 
 **Endpoint:** `GET /api/likes/`
 
@@ -1928,7 +1699,7 @@ Sem body
 
 ---
 
-### 51. Curtir um Post
+### 47. Curtir um Post
 
 **Endpoint:** `POST /api/likes/`
 
@@ -1958,7 +1729,7 @@ Sem body
 
 ---
 
-### 52. Descurtir um Post
+### 48. Descurtir um Post
 
 **Endpoint:** `DELETE /api/likes/{id}/`
 
@@ -1996,12 +1767,12 @@ Sem body
 # Registrar
 curl -X POST http://localhost:8000/api/auth/register/ \
   -H "Content-Type: application/json" \
-  -d '{"username":"testuser","email":"test@test.com","password":"pass123","password_confirm":"pass123"}'
+  -d '{"username":"testuser","email":"test@test.com","password":"pass123","password_confirm":"pass123","birth_date":"1995-06-15"}'
 
 # Login
 curl -X POST http://localhost:8000/api/auth/login/ \
   -H "Content-Type: application/json" \
-  -d '{"username":"testuser","password":"pass123"}'
+  -d '{"identifier":"testuser","password":"pass123"}'
 
 # Criar Post com Hashtags
 curl -X POST http://localhost:8000/api/posts/ \
@@ -2009,120 +1780,18 @@ curl -X POST http://localhost:8000/api/posts/ \
   -H "Authorization: Token SEU_TOKEN_AQUI" \
   -d '{"content":"Meu primeiro post com #python e #django!"}'
 
-# Upload de Múltiplas Imagens
+# Upload de Imagens e GIF
 curl -X POST http://localhost:8000/api/posts/ \
   -H "Authorization: Token SEU_TOKEN_AQUI" \
   -F "content=Post com imagens!" \
   -F "media_files=@image1.jpg" \
-  -F "media_files=@image2.jpg"
+  -F "media_files=@animated.gif"
 
-# Criar Poll
-curl -X POST http://localhost:8000/api/posts/ \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Token SEU_TOKEN_AQUI" \
-  -d '{
-    "content": "Qual sua linguagem favorita?",
-    "poll": {
-      "duration_hours": 24,
-      "options": ["Python", "JavaScript", "Go", "Rust"]
-    }
-  }'
+# Listar posts de um autor sem replies e sem retweets
+curl -X GET "http://localhost:8000/api/posts/?author=1&has_reply=false&is_retweet=false"
 
-# Busca Global
-curl -X GET "http://localhost:8000/api/search/all/?q=python&limit=5"
-
-# Trending Hashtags
-curl -X GET "http://localhost:8000/api/hashtags/trending/?period=week&limit=10"
-```
-
-### Usando Python (requests):
-
-```python
-import requests
-
-BASE_URL = "http://localhost:8000/api"
-
-# Registrar
-response = requests.post(f"{BASE_URL}/auth/register/", json={
-    "username": "testuser",
-    "email": "test@test.com",
-    "password": "pass123",
-    "password_confirm": "pass123"
-})
-token = response.json()['token']
-
-headers = {"Authorization": f"Token {token}"}
-
-# Criar Post com Hashtags
-response = requests.post(
-    f"{BASE_URL}/posts/",
-    headers=headers,
-    json={"content": "Testando #API com #Python!"}
-)
-print(response.json())
-
-# Votar em Poll
-response = requests.post(
-    f"{BASE_URL}/polls/1/vote/",
-    headers=headers,
-    json={"option_id": 1}
-)
-
-# Buscar Posts com Hashtag
-response = requests.get(f"{BASE_URL}/search/all/?q=python")
-print(response.json())
-```
-
-### Usando JavaScript (Axios):
-
-```javascript
-import axios from 'axios';
-
-const BASE_URL = 'http://localhost:8000/api';
-
-// Registrar
-const registerResponse = await axios.post(`${BASE_URL}/auth/register/`, {
-  username: 'testuser',
-  email: 'test@test.com',
-  password: 'pass123',
-  password_confirm: 'pass123'
-});
-
-const token = registerResponse.data.token;
-const headers = { Authorization: `Token ${token}` };
-
-// Criar Post com Location e Poll
-const postResponse = await axios.post(
-  `${BASE_URL}/posts/`,
-  {
-    content: 'Post completo!',
-    location: {
-      name: 'São Paulo, Brasil',
-      latitude: '-23.550520',
-      longitude: '-46.633308'
-    },
-    poll: {
-      question: 'Gostou?',
-      duration_hours: 24,
-      options: ['Sim', 'Não']
-    }
-  },
-  { headers }
-);
-
-// Retweet
-await axios.post(
-  `${BASE_URL}/posts/5/retweet/`,
-  {},
-  { headers }
-);
-
-// Notificações não lidas
-const notifications = await axios.get(
-  `${BASE_URL}/notifications/unread-count/`,
-  { headers }
-);
-console.log(`Você tem ${notifications.data.count} notificações`);
+# Listar posts curtidos por um usuário
+curl -X GET "http://localhost:8000/api/posts/?liked_by=1"
 ```
 
 ---
@@ -2132,13 +1801,21 @@ console.log(`Você tem ${notifications.data.count} notificações`);
 ### Limites e Validações:
 
 - **Post:** 280 caracteres
-- **Comentário:** 280 caracteres
 - **Bio:** 160 caracteres
 - **Múltiplas Mídias:** Máximo 4 por post
-- **Imagens:** Máximo 5MB (profile_image: 2MB, banner: 5MB)
-- **Vídeos:** Máximo 50MB
+- **Imagens** (JPEG, PNG, WEBP): máximo 5MB
+- **GIFs:** máximo 15MB
+- **Vídeos:** máximo 50MB
+- **profile_image:** máximo 5MB, formatos: JPEG, PNG, WEBP
+- **banner:** máximo 5MB, formatos: JPEG, PNG, WEBP
 - **Poll:** 2-4 opções, duração 1-168 horas
 - **Idade Mínima:** 13 anos
+
+### Armazenamento de Mídia:
+
+- Em **produção**, arquivos são armazenados no **Cloudinary**
+- URLs de mídia em produção seguem o padrão: `https://res.cloudinary.com/{cloud_name}/...`
+- Em **desenvolvimento local**, arquivos são armazenados em `/media/`
 
 ### Funcionalidades Automáticas:
 
@@ -2148,9 +1825,23 @@ console.log(`Você tem ${notifications.data.count} notificações`);
 - **Stats:** Calculados dinamicamente (posts_count, followers_count, etc)
 - **Retweets/Unretweets:** Contadores atualizados automaticamente
 
+### Retweets — Comportamento:
+
+- Retweet simples e quote retweet são independentes — é possível ter ambos no mesmo post
+- `unretweet` remove apenas o retweet simples, nunca afeta quote retweets
+- Múltiplos quote retweets do mesmo post são permitidos
+- `is_retweeted: true` indica que o usuário autenticado fez algum tipo de retweet (simples ou quote)
+
+### Posts — Campos de Interação:
+
+- `is_liked`: indica se o usuário autenticado curtiu o post
+- `like_id`: ID da curtida do usuário autenticado (necessário para descurtir via `DELETE /api/likes/{like_id}/`)
+- `is_retweeted`: indica se o usuário autenticado retweetou o post (simples ou quote)
+- Campos retornam `false`/`null` para usuários não autenticados
+
 ### CORS:
 
-- API configurada para aceitar requests de `http://localhost:3000`
+- API configurada para aceitar requests de `http://localhost:5173`
 
 ### Paginação:
 
@@ -2175,15 +1866,14 @@ console.log(`Você tem ${notifications.data.count} notificações`);
 **Hashtags:** 5 endpoints  
 **Notificações:** 5 endpoints  
 **Busca:** 1 endpoint  
-**Comentários:** 4 endpoints  
 **Curtidas:** 3 endpoints  
 
-**Total:** 52 endpoints ✅
+**Total:** 47 endpoints ✅
 
 ---
 
-**Documentação criada em:** 19/02/2026  
-**Versão da API:** 2.0  
+**Documentação atualizada em:** 16/03/2026  
+**Versão da API:** 3.0  
 **Base URL (desenvolvimento):** `http://localhost:8000/api`  
-**Repositório:** [Link do GitHub]  
+**Base URL (produção):** `https://twitter-clone-api-yu0y.onrender.com/api`  
 **Status:** ✅ Produção

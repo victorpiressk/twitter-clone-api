@@ -4,7 +4,7 @@ Posts admin configuration.
 
 from django.contrib import admin
 
-from posts.models import Comment, Like, Post
+from posts.models import Like, Post
 
 
 @admin.register(Post)
@@ -17,29 +17,12 @@ class PostAdmin(admin.ModelAdmin):
         "content_preview",
         "created_at",
         "likes_count",
-        "comments_count",
+        "replies_count",
     ]
     list_filter = ["created_at"]
     search_fields = ["content", "author__username"]
     ordering = ["-created_at"]
-    readonly_fields = ["created_at", "updated_at", "likes_count", "comments_count"]
-
-    def content_preview(self, obj):
-        """Mostra preview do conteúdo."""
-        return obj.content[:50] + "..." if len(obj.content) > 50 else obj.content
-
-    content_preview.short_description = "Conteúdo"
-
-
-@admin.register(Comment)
-class CommentAdmin(admin.ModelAdmin):
-    """Configuração do Comment no admin."""
-
-    list_display = ["id", "user", "post", "content_preview", "created_at"]
-    list_filter = ["created_at"]
-    search_fields = ["content", "user__username"]
-    ordering = ["-created_at"]
-    readonly_fields = ["created_at", "updated_at"]
+    readonly_fields = ["created_at", "updated_at", "likes_count", "replies_count"]
 
     def content_preview(self, obj):
         """Mostra preview do conteúdo."""

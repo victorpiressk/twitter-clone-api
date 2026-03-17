@@ -125,7 +125,7 @@ class TestUserSerializer:
 
         assert not serializer.is_valid()
         assert "profile_image" in serializer.errors
-        assert "Arquivo de imagem inválido" in str(
+        assert "Formato não aceito. Use JPEG, PNG ou WEBP." in str(
             serializer.errors["profile_image"][0]
         )
 

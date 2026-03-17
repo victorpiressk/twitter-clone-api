@@ -120,3 +120,107 @@ class TestPostViewSet:
 
         assert response.status_code == status.HTTP_200_OK
         assert len(response.data) == 2  # Apenas posts de quem segue + próprios
+
+    @pytest.mark.django_db
+    class TestPostViewSetFilters:
+        """Testes para filtros dinâmicos do PostViewSet."""
+
+        def test_filter_by_author(self, api_client, user, another_user):
+            """Testa filtro por autor."""
+            Post.objects.create(author=user, content="Post do user")
+            Post.objects.create(author=another_user, content="Post do another_user")
+
+            url = reverse("post-list")
+            response = api_client.get(url, {"author": user.id})
+
+            assert response.status_code == status.HTTP_200_OK
+            assert len(response.data["results"]) == 1
+            assert response.data["results"][0]["content"] == "Post do user"
+
+        def test_filter_has_reply_true(self, api_client, user, another_user):
+            """Testa filtro has_reply=true retorna apenas respostas."""
+            original = Post.objects.create(author=another_user, content="Original")
+            Post.objects.create(author=user, content="Resposta", in_reply_to=original)
+            Post.objects.create(author=user, content="Post normal")
+
+            url = reverse("post-list")
+            response = api_client.get(url, {"has_reply": "true"})
+
+            assert response.status_code == status.HTTP_200_OK
+            assert len(response.data["results"]) == 1
+            assert response.data["results"][0]["content"] == "Resposta"
+
+        def test_filter_has_reply_false(self, api_client, user, another_user):
+            """Testa filtro has_reply=false exclui respostas."""
+            original = Post.objects.create(author=another_user, content="Original")
+            Post.objects.create(author=user, content="Resposta", in_reply_to=original)
+            Post.objects.create(author=user, content="Post normal")
+
+            url = reverse("post-list")
+            response = api_client.get(url, {"has_reply": "false"})
+
+            assert response.status_code == status.HTTP_200_OK
+            results = response.data["results"]
+            assert all(r["in_reply_to"] is None for r in results)
+
+        def test_filter_is_retweet_false(self, api_client, user, another_user):
+            """Testa filtro is_retweet=false exclui retweets."""
+            original = Post.objects.create(author=another_user, content="Original")
+            Post.objects.create(
+                author=user, content="", is_retweet=True, retweet_of=original
+            )
+            Post.objects.create(author=user, content="Post normal")
+
+            url = reverse("post-list")
+            response = api_client.get(url, {"is_retweet": "false"})
+
+            assert response.status_code == status.HTTP_200_OK
+            results = response.data["results"]
+            assert all(not r["is_retweet"] for r in results)
+
+        def test_filter_is_retweet_true(self, api_client, user, another_user):
+            """Testa filtro is_retweet=true retorna apenas retweets."""
+            original = Post.objects.create(author=another_user, content="Original")
+            Post.objects.create(
+                author=user, content="", is_retweet=True, retweet_of=original
+            )
+            Post.objects.create(author=user, content="Post normal")
+
+            url = reverse("post-list")
+            response = api_client.get(url, {"is_retweet": "true"})
+
+            assert response.status_code == status.HTTP_200_OK
+            assert len(response.data["results"]) == 1
+            assert response.data["results"][0]["is_retweet"] is True
+
+        def test_filter_liked_by(self, authenticated_client, user, another_user):
+            """Testa filtro liked_by retorna posts curtidos pelo usuário."""
+            post1 = Post.objects.create(author=another_user, content="Post curtido")
+            Post.objects.create(author=another_user, content="Post não curtido")
+
+            post1.likes.create(user=user)
+
+            url = reverse("post-list")
+            response = authenticated_client.get(url, {"liked_by": user.id})
+
+            assert response.status_code == status.HTTP_200_OK
+            assert len(response.data["results"]) == 1
+            assert response.data["results"][0]["content"] == "Post curtido"
+
+        def test_filter_combined_author_and_no_reply(
+            self, api_client, user, another_user
+        ):
+            """Testa filtro combinado: posts de um autor sem replies."""
+            original = Post.objects.create(author=another_user, content="Original")
+            Post.objects.create(
+                author=user, content="Resposta do user", in_reply_to=original
+            )
+            Post.objects.create(author=user, content="Post normal do user")
+            Post.objects.create(author=another_user, content="Post do another_user")
+
+            url = reverse("post-list")
+            response = api_client.get(url, {"author": user.id, "has_reply": "false"})
+
+            assert response.status_code == status.HTTP_200_OK
+            assert len(response.data["results"]) == 1
+            assert response.data["results"][0]["content"] == "Post normal do user"

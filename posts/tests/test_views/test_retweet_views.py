@@ -147,3 +147,91 @@ class TestRetweetViewSet:
 
         post.refresh_from_db()
         assert post.retweets_count == 4
+
+    def test_can_simple_retweet_after_quote_retweet(
+        self, authenticated_client, user, another_user
+    ):
+        """Testa que pode fazer retweet simples mesmo após quote retweet."""
+        post = Post.objects.create(author=another_user, content="Original")
+
+        # Criar quote retweet primeiro
+        Post.objects.create(
+            author=user, content="Meu comentário", is_retweet=True, retweet_of=post
+        )
+
+        # Retweet simples deve funcionar
+        url = reverse("post-retweet", kwargs={"pk": post.pk})
+        response = authenticated_client.post(url)
+
+        assert response.status_code == status.HTTP_201_CREATED
+        assert Post.objects.filter(
+            author=user, is_retweet=True, retweet_of=post, content=""
+        ).exists()
+
+    def test_cannot_simple_retweet_twice(
+        self, authenticated_client, user, another_user
+    ):
+        """Testa que não pode fazer dois retweets simples do mesmo post."""
+        post = Post.objects.create(author=another_user, content="Original")
+
+        # Retweet simples já existe
+        Post.objects.create(author=user, content="", is_retweet=True, retweet_of=post)
+
+        url = reverse("post-retweet", kwargs={"pk": post.pk})
+        response = authenticated_client.post(url)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_can_multiple_quotes_same_post(
+        self, authenticated_client, user, another_user
+    ):
+        """Testa que pode fazer múltiplos quote retweets do mesmo post."""
+        post = Post.objects.create(author=another_user, content="Original")
+
+        url = reverse("post-quote-retweet", kwargs={"pk": post.pk})
+
+        response1 = authenticated_client.post(
+            url, {"content": "Primeiro comentário"}, format="json"
+        )
+        response2 = authenticated_client.post(
+            url, {"content": "Segundo comentário"}, format="json"
+        )
+
+        assert response1.status_code == status.HTTP_201_CREATED
+        assert response2.status_code == status.HTTP_201_CREATED
+        assert (
+            Post.objects.filter(author=user, is_retweet=True, retweet_of=post).count()
+            == 2
+        )
+
+    def test_unretweet_only_removes_simple_retweet(
+        self, authenticated_client, user, another_user
+    ):
+        """Testa que unretweet remove apenas o retweet simples, não o quote retweet."""
+        post = Post.objects.create(author=another_user, content="Original")
+        post.retweets_count = 2
+        post.save()
+
+        # Criar quote retweet e retweet simples
+        Post.objects.create(
+            author=user, content="Meu comentário", is_retweet=True, retweet_of=post
+        )
+        Post.objects.create(author=user, content="", is_retweet=True, retweet_of=post)
+
+        url = reverse("post-unretweet", kwargs={"pk": post.pk})
+        response = authenticated_client.delete(url)
+
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+
+        # Quote retweet deve permanecer
+        assert Post.objects.filter(
+            author=user, is_retweet=True, retweet_of=post, content="Meu comentário"
+        ).exists()
+
+        # Retweet simples deve ter sido removido
+        assert not Post.objects.filter(
+            author=user, is_retweet=True, retweet_of=post, content=""
+        ).exists()
+
+        post.refresh_from_db()
+        assert post.retweets_count == 1

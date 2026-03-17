@@ -168,9 +168,9 @@ class Post(models.Model):
         return self.likes.count()
 
     @property
-    def comments_count(self):
-        """Retorna quantidade de comentários."""
-        return self.comments.count()
+    def replies_count(self):
+        """Retorna quantidade de replies."""
+        return self.replies.count()
 
     @property
     def is_published(self):

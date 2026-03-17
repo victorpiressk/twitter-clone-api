@@ -45,6 +45,11 @@ pip-delete-this-directory.txt
 *.mp4
 *.gif
 
+# Exceção para arquivos estáticos
+!staticfiles/**/*.jpg
+!staticfiles/**/*.png
+!staticfiles/**/*.gif
+
 # Unit test / coverage reports
 htmlcov/
 .tox/

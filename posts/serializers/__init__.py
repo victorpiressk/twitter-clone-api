@@ -2,7 +2,6 @@
 Posts serializers package.
 """
 
-from .comment_serializer import CommentSerializer
 from .hashtag_serializers import HashtagSerializer
 from .like_serializer import LikeSerializer
 from .location_serializer import LocationCreateSerializer, LocationSerializer
@@ -25,7 +24,6 @@ __all__ = [
     "PostSerializer",
     "PostCreateSerializer",
     "PostMediaSerializer",
-    "CommentSerializer",
     "LikeSerializer",
     "PollOptionSerializer",
     "PollSerializer",

@@ -28,6 +28,7 @@ def user_data():
         "password_confirm": "testpass123",
         "first_name": "Test",
         "last_name": "User",
+        "birth_date": "1995-06-15",
     }
 
 
@@ -91,6 +92,48 @@ class TestRegisterView:
         assert "username" in response.data
         assert "password" in response.data
 
+    def test_register_with_valid_birth_date(self, api_client, user_data):
+        """Testa registro com data de nascimento válida (maior de 13 anos)."""
+        user_data["birth_date"] = "1995-06-15"
+        url = reverse("auth-register")
+        response = api_client.post(url, user_data, format="json")
+
+        assert response.status_code == status.HTTP_201_CREATED
+        assert response.data["user"]["birth_date"] == "1995-06-15"
+
+    def test_register_without_birth_date(self, api_client, user_data):
+        """Testa registro sem data de nascimento → erro 400."""
+        user_data.pop("birth_date")
+        url = reverse("auth-register")
+        response = api_client.post(url, user_data, format="json")
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "birth_date" in response.data
+
+    def test_register_underage_birth_date(self, api_client, user_data):
+        """Testa registro com idade menor que 13 anos → erro 400."""
+        from datetime import date, timedelta
+
+        underage = date.today() - timedelta(days=365 * 10)  # 10 anos
+        user_data["birth_date"] = underage.isoformat()
+        url = reverse("auth-register")
+        response = api_client.post(url, user_data, format="json")
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "birth_date" in response.data
+
+    def test_register_future_birth_date(self, api_client, user_data):
+        """Testa registro com data de nascimento no futuro → erro 400."""
+        from datetime import date, timedelta
+
+        future = date.today() + timedelta(days=365)
+        user_data["birth_date"] = future.isoformat()
+        url = reverse("auth-register")
+        response = api_client.post(url, user_data, format="json")
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "birth_date" in response.data
+
 
 @pytest.mark.django_db
 class TestLoginView:
@@ -100,14 +143,17 @@ class TestLoginView:
     def existing_user(self):
         """Fixture com usuário já cadastrado."""
         return User.objects.create_user(
-            username="testuser", email="test@example.com", password="testpass123"
+            username="testuser",
+            email="test@example.com",
+            password="testpass123",
+            phone="11999999999",
         )
 
-    def test_login_success(self, api_client, existing_user):
-        """Testa login com credenciais válidas."""
+    def test_login_success_with_username(self, api_client, existing_user):
+        """Testa login com username válido."""
         url = reverse("auth-login")
         response = api_client.post(
-            url, {"username": "testuser", "password": "testpass123"}, format="json"
+            url, {"identifier": "testuser", "password": "testpass123"}, format="json"
         )
 
         assert response.status_code == status.HTTP_200_OK
@@ -115,11 +161,35 @@ class TestLoginView:
         assert "token" in response.data
         assert response.data["user"]["username"] == "testuser"
 
+    def test_login_success_with_email(self, api_client, existing_user):
+        """Testa login com email válido."""
+        url = reverse("auth-login")
+        response = api_client.post(
+            url,
+            {"identifier": "test@example.com", "password": "testpass123"},
+            format="json",
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+        assert "user" in response.data
+        assert "token" in response.data
+
+    def test_login_success_with_phone(self, api_client, existing_user):
+        """Testa login com phone válido."""
+        url = reverse("auth-login")
+        response = api_client.post(
+            url, {"identifier": "11999999999", "password": "testpass123"}, format="json"
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+        assert "user" in response.data
+        assert "token" in response.data
+
     def test_login_wrong_password(self, api_client, existing_user):
         """Testa login com senha incorreta."""
         url = reverse("auth-login")
         response = api_client.post(
-            url, {"username": "testuser", "password": "wrongpass"}, format="json"
+            url, {"identifier": "testuser", "password": "wrongpass"}, format="json"
         )
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
@@ -128,7 +198,7 @@ class TestLoginView:
         """Testa login com usuário inexistente."""
         url = reverse("auth-login")
         response = api_client.post(
-            url, {"username": "nonexistent", "password": "testpass123"}, format="json"
+            url, {"identifier": "nonexistent", "password": "testpass123"}, format="json"
         )
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
@@ -139,31 +209,3 @@ class TestLoginView:
         response = api_client.post(url, {}, format="json")
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-
-
-@pytest.mark.django_db
-class TestLogoutView:
-    """Testes para o endpoint de logout."""
-
-    @pytest.fixture
-    def authenticated_client(self, api_client):
-        """Fixture com cliente autenticado."""
-        user = User.objects.create_user(username="testuser", password="testpass123")
-        api_client.force_authenticate(user=user)
-        return api_client, user
-
-    def test_logout_success(self, authenticated_client):
-        """Testa logout com usuário autenticado."""
-        api_client, user = authenticated_client
-        url = reverse("auth-logout")
-        response = api_client.post(url)
-
-        assert response.status_code == status.HTTP_200_OK
-        assert "detail" in response.data
-
-    def test_logout_unauthenticated(self, api_client):
-        """Testa logout sem estar autenticado."""
-        url = reverse("auth-logout")
-        response = api_client.post(url)
-
-        assert response.status_code == status.HTTP_401_UNAUTHORIZED
