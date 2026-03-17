@@ -286,3 +286,160 @@ class TestFollowViewSet:
 
         assert response.status_code == status.HTTP_403_FORBIDDEN
         assert Follow.objects.filter(follower=user2, following=user3).exists()
+
+
+@pytest.mark.django_db
+class TestUserAccountSettings:
+    """Testes para os endpoints de configurações da conta."""
+
+    def test_update_account_email_success(self, authenticated_client, user):
+        """Testa atualização de email com sucesso."""
+        url = reverse("user-update-account", kwargs={"pk": user.pk})
+        response = authenticated_client.patch(
+            url, {"email": "new@example.com", "current_password": "testpass123"}, format="json"
+        )
+        assert response.status_code == status.HTTP_200_OK
+        user.refresh_from_db()
+        assert user.email == "new@example.com"
+
+    def test_update_account_email_duplicate(self, authenticated_client, user):
+        """Testa que email duplicado retorna erro."""
+        User.objects.create_user(username="other", email="taken@example.com", password="pass123")
+        url = reverse("user-update-account", kwargs={"pk": user.pk})
+        response = authenticated_client.patch(
+            url, {"email": "taken@example.com", "current_password": "testpass123"}, format="json"
+        )
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "email" in response.data
+
+    def test_update_account_phone_success(self, authenticated_client, user):
+        """Testa atualização de phone com sucesso."""
+        url = reverse("user-update-account", kwargs={"pk": user.pk})
+        response = authenticated_client.patch(
+            url, {"phone": "11999999999", "current_password": "testpass123"}, format="json"
+        )
+        assert response.status_code == status.HTTP_200_OK
+        user.refresh_from_db()
+        assert user.phone == "11999999999"
+
+    def test_update_account_phone_duplicate(self, authenticated_client, user):
+        """Testa que phone duplicado retorna erro."""
+        User.objects.create_user(username="other", phone="11999999999", password="pass123")
+        url = reverse("user-update-account", kwargs={"pk": user.pk})
+        response = authenticated_client.patch(
+            url, {"phone": "11999999999", "current_password": "testpass123"}, format="json"
+        )
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "phone" in response.data
+
+    def test_update_account_username_success(self, authenticated_client, user):
+        """Testa atualização de username com sucesso."""
+        url = reverse("user-update-account", kwargs={"pk": user.pk})
+        response = authenticated_client.patch(
+            url, {"username": "newusername", "current_password": "testpass123"}, format="json"
+        )
+        assert response.status_code == status.HTTP_200_OK
+        user.refresh_from_db()
+        assert user.username == "newusername"
+
+    def test_update_account_username_duplicate(self, authenticated_client, user):
+        """Testa que username duplicado retorna erro."""
+        User.objects.create_user(username="takenuser", password="pass123")
+        url = reverse("user-update-account", kwargs={"pk": user.pk})
+        response = authenticated_client.patch(
+            url, {"username": "takenuser", "current_password": "testpass123"}, format="json"
+        )
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "username" in response.data
+
+    def test_update_account_wrong_password(self, authenticated_client, user):
+        """Testa que senha incorreta retorna erro."""
+        url = reverse("user-update-account", kwargs={"pk": user.pk})
+        response = authenticated_client.patch(
+            url, {"email": "new@example.com", "current_password": "wrongpassword"}, format="json"
+        )
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "current_password" in response.data
+
+    def test_update_account_unauthenticated(self, api_client, user):
+        """Testa que usuário não autenticado não pode atualizar conta."""
+        url = reverse("user-update-account", kwargs={"pk": user.pk})
+        response = api_client.patch(
+            url, {"email": "new@example.com", "current_password": "testpass123"}, format="json"
+        )
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_change_password_success(self, authenticated_client, user):
+        """Testa alteração de senha com sucesso."""
+        url = reverse("user-change-password", kwargs={"pk": user.pk})
+        response = authenticated_client.post(
+            url,
+            {
+                "current_password": "testpass123",
+                "new_password": "newpass456",
+                "new_password_confirm": "newpass456",
+            },
+            format="json",
+        )
+        assert response.status_code == status.HTTP_200_OK
+        user.refresh_from_db()
+        assert user.check_password("newpass456")
+
+    def test_change_password_wrong_current(self, authenticated_client, user):
+        """Testa que senha atual incorreta retorna erro."""
+        url = reverse("user-change-password", kwargs={"pk": user.pk})
+        response = authenticated_client.post(
+            url,
+            {
+                "current_password": "wrongpass",
+                "new_password": "newpass456",
+                "new_password_confirm": "newpass456",
+            },
+            format="json",
+        )
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "current_password" in response.data
+
+    def test_change_password_mismatch(self, authenticated_client, user):
+        """Testa que senhas não coincidentes retornam erro."""
+        url = reverse("user-change-password", kwargs={"pk": user.pk})
+        response = authenticated_client.post(
+            url,
+            {
+                "current_password": "testpass123",
+                "new_password": "newpass456",
+                "new_password_confirm": "differentpass",
+            },
+            format="json",
+        )
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "new_password_confirm" in response.data
+
+    def test_change_password_same_as_current(self, authenticated_client, user):
+        """Testa que nova senha igual à atual retorna erro."""
+        url = reverse("user-change-password", kwargs={"pk": user.pk})
+        response = authenticated_client.post(
+            url,
+            {
+                "current_password": "testpass123",
+                "new_password": "testpass123",
+                "new_password_confirm": "testpass123",
+            },
+            format="json",
+        )
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "new_password" in response.data
+
+    def test_change_password_too_short(self, authenticated_client, user):
+        """Testa que senha muito curta retorna erro."""
+        url = reverse("user-change-password", kwargs={"pk": user.pk})
+        response = authenticated_client.post(
+            url,
+            {
+                "current_password": "testpass123",
+                "new_password": "short",
+                "new_password_confirm": "short",
+            },
+            format="json",
+        )
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
