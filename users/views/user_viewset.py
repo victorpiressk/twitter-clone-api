@@ -32,22 +32,6 @@ class UserViewSet(viewsets.ModelViewSet):
     serializer_class = UserSerializer
 
     def get_serializer_class(self):
-        """Retorna serializer apropriado para cada ação."""
-        if self.action == "create":
-            return UserCreateSerializer
-        return UserSerializer
-
-    def get_permissions(self):
-        """Define permissões por ação."""
-        if self.action == "create":
-            return [AllowAny()]
-        if self.action in ["list", "retrieve", "followers", "following"]:
-            return [AllowAny()]
-        if self.action in ["update", "partial_update", "destroy"]:
-            return [IsAuthenticated(), IsOwnerOrReadOnly()]
-        return [IsAuthenticated()]
-    
-    def get_serializer_class(self):
         if self.action == "create":
             return UserCreateSerializer
         if self.action == "update_account":
@@ -59,7 +43,13 @@ class UserViewSet(viewsets.ModelViewSet):
             return [AllowAny()]
         if self.action in ["list", "retrieve", "followers", "following"]:
             return [AllowAny()]
-        if self.action in ["update", "partial_update", "destroy", "update_account", "change_password"]:
+        if self.action in [
+            "update",
+            "partial_update",
+            "destroy",
+            "update_account",
+            "change_password",
+        ]:
             return [IsAuthenticated(), IsOwnerOrReadOnly()]
         return [IsAuthenticated()]
 
